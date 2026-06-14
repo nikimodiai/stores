@@ -1,0 +1,28 @@
+/* ── Storefront global base ──────────────────────────────────────────
+   Minimal: fonts, reset, base body, and the shared spinner. All other
+   styling is scoped in src/storefront/Storefront.module.css. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { height: 100%; min-height: 100vh; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #fffdf9;
+  color: #2a2118;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Shared spinner used by the storefront loading state */
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(184, 134, 11, .18);
+  border-top: 3px solid #b8860b;
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
