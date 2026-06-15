@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import Storefront from './storefront/Storefront';
+import ProductDetail from './storefront/ProductDetail';
 import StoreNotFound from './storefront/StoreNotFound';
 
 // Standalone public storefront. Each store is reachable at /store/:storeSlug
@@ -14,6 +15,7 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="/store/:storeSlug" element={<Storefront />} />
+        <Route path="/store/:storeSlug/product/:productId" element={<ProductDetail />} />
         <Route path="/" element={<StoreNotFound />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

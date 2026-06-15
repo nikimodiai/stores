@@ -91,6 +91,36 @@ export async function getStorefrontProducts(ownerId, category) {
 }
 
 /**
+ * Fetch a single product by id, scoped to the store's owner_id so one store
+ * can never deep-link into another store's catalogue. Returns the row or null.
+ */
+export async function getStorefrontProduct(ownerId, productId) {
+  if (!ownerId || !productId) return null;
+
+  const { data, error } = await db
+    .from('products')
+    .select(PRODUCT_PUBLIC_COLS)
+    .eq('owner_id', ownerId)
+    .eq('id', productId)
+    .eq('is_current', true)
+    .eq('visibility', 'all')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message || 'Failed to load product');
+  return data ?? null;
+}
+
+/**
+ * The N most-recently-added products (already sorted newest-first by the
+ * fetch order in getStorefrontProducts). Pure helper over the loaded array.
+ */
+export function latestProducts(products, n = 8) {
+  return [...products]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, n);
+}
+
+/**
  * Derive the distinct, non-empty category list for a store's catalogue,
  * ordered by the canonical CATEGORIES order where possible. Pass the
  * already-loaded product array so we don't issue a second round-trip.
@@ -192,4 +222,129 @@ export async function getStorefrontOffers(ownerId) {
   // Filter valid_to >= today's date (YYYY-MM-DD) in JS to be safe and timezone-consistent
   const todayStr = new Date().toISOString().split('T')[0];
   return (data ?? []).filter(o => !o.valid_to || o.valid_to >= todayStr);
+}
+
+// ── Virtual Try-On ──────────────────────────────────────────────────
+// Web entry point for the WhatsApp try-on workflow. The website POSTs the
+// customer's selfie (base64) + the product to an n8n Webhook node, which
+// runs the try-on sub-workflow and returns the generated image.
+//
+// Set VITE_TRYON_WEBHOOK_URL to override the default endpoint.
+const env2 = (typeof import.meta !== 'undefined' && import.meta.env) || {};
+export const TRYON_WEBHOOK_URL =
+  env2.VITE_TRYON_WEBHOOK_URL ||
+  'https://n8n.srv1639765.hstgr.cloud/webhook/swarnix-web-tryon';
+
+// Map a product category to the jewelleryType token the try-on prompt uses
+// for placement (see "Build Prompt" in the n8n workflow).
+const CATEGORY_TO_JEWELLERY_TYPE = {
+  Necklace: 'necklace',
+  Pendant: 'pendant',
+  Mangalsutra: 'mangalsutra',
+  Chain: 'necklace',
+  Earring: 'earrings',
+  Ring: 'ring',
+  Bangle: 'bangles',
+  Bracelet: 'bracelet',
+  Nosepin: 'nath',
+  'Maang Tikka': 'maang tikka',
+  Bajuband: 'baajuband',
+  Kamarband: 'kamarbandh',
+  Anklet: 'bracelet',
+};
+
+export function jewelleryTypeFor(product) {
+  if (!product) return 'necklace';
+  return CATEGORY_TO_JEWELLERY_TYPE[product.category] || 'necklace';
+}
+
+/**
+ * Read a File/Blob as base64 (without the data: prefix) + its mime type.
+ */
+export function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      resolve({ base64: result.split(',')[1] || '', mimeType: file.type || 'image/jpeg' });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Run the virtual try-on. Sends the selfie + product to the n8n webhook and
+ * returns the workflow's response shape:
+ *   { success: bool, imageUrl, caption, message, reason }
+ *
+ * @param {object} args
+ * @param {string} args.ownerId
+ * @param {object} args.product   the product being tried on
+ * @param {File}   args.selfieFile
+ * @param {string} [args.occasion]      '', 'wedding', 'party', 'casual', 'festive'
+ * @param {string} [args.customerName]
+ */
+export async function runTryOn({ ownerId, product, selfieFile, occasion = '', customerName = 'Website Visitor' }) {
+  if (!ownerId) return { success: false, reason: 'missing_owner', message: 'Store not identified.' };
+  if (!product) return { success: false, reason: 'missing_product', message: 'No product selected.' };
+  if (!selfieFile) return { success: false, reason: 'missing_selfie', message: 'Please choose a selfie first.' };
+
+  const itemImageUrl = product.primary_image_url
+    || (Array.isArray(product.images) && product.images[0])
+    || '';
+  if (!itemImageUrl) {
+    return { success: false, reason: 'no_product_image', message: 'This product has no image to try on.' };
+  }
+
+  const { base64, mimeType } = await fileToBase64(selfieFile);
+
+  const body = {
+    owner_id: ownerId,
+    selfie_base64: base64,
+    mime_type: mimeType,
+    item_id: product.sku || product.id,
+    item_name: product.name || 'this piece',
+    item_image_url: itemImageUrl,
+    jewellery_type: jewelleryTypeFor(product),
+    occasion: occasion || '',
+    customer_name: customerName || 'Website Visitor',
+  };
+
+  // Gemini + Seedream + Cloudinary can take 30–40s; allow generous headroom.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000);
+
+  try {
+    const res = await fetch(TRYON_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      return { success: false, reason: 'server_error', message: `Try-on service error (${res.status}).` };
+    }
+
+    const data = await res.json();
+    // The webhook may return the sub-workflow output directly, or wrapped in
+    // an array (n8n's default). Normalise to a single object.
+    const out = Array.isArray(data) ? (data[0] || {}) : data;
+    return {
+      success: !!out.success,
+      imageUrl: out.imageUrl || null,
+      caption: out.caption || '',
+      message: out.message || '',
+      reason: out.reason || '',
+      remaining: out.remaining,
+    };
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      return { success: false, reason: 'timeout', message: 'The try-on took too long. Please try again.' };
+    }
+    return { success: false, reason: 'network_error', message: 'Network error. Please try again.' };
+  }
 }

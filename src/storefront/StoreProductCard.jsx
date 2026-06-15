@@ -52,8 +52,9 @@ function Slideshow({ urls, name, showDots }) {
 }
 
 // One product, rendered as a grid card or a list row depending on viewMode.
-export default function StoreProductCard({ product: p, viewMode = 'grid' }) {
+export default function StoreProductCard({ product: p, viewMode = 'grid', onOpen }) {
   const urls = productImages(p);
+  const open = () => onOpen?.(p);
 
   const priceNum = p.price != null ? Number(p.price) : null;
   const priceStr = priceNum ? '₹' + priceNum.toLocaleString('en-IN') : 'Price on request';
@@ -80,7 +81,7 @@ export default function StoreProductCard({ product: p, viewMode = 'grid' }) {
 
   if (viewMode === 'list') {
     return (
-      <article className={styles.listCard}>
+      <button type="button" onClick={open} className={styles.listCard}>
         <div className={styles.listImgWrap}>
           <Slideshow urls={urls} name={p.name} showDots={false} />
         </div>
@@ -98,12 +99,12 @@ export default function StoreProductCard({ product: p, viewMode = 'grid' }) {
           )}
         </div>
         <div className={styles.listPrice}>{priceStr}</div>
-      </article>
+      </button>
     );
   }
 
   return (
-    <article className={styles.card}>
+    <button type="button" onClick={open} className={styles.card}>
       <div className={styles.cardImgWrap}>
         <Slideshow urls={urls} name={p.name} showDots />
       </div>
@@ -122,6 +123,6 @@ export default function StoreProductCard({ product: p, viewMode = 'grid' }) {
         )}
         <div className={styles.cardPrice}>{priceStr}</div>
       </div>
-    </article>
+    </button>
   );
 }

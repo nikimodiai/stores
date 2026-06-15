@@ -9,6 +9,7 @@ import {
   deriveMetals,
   matchesSearch,
   sortProducts,
+  latestProducts,
 } from '../lib/storefront';
 import { CATEGORIES } from '../lib/config';
 import StoreHeader from './StoreHeader';
@@ -16,6 +17,7 @@ import StoreProductCard from './StoreProductCard';
 import StoreNotFound from './StoreNotFound';
 import StoreHero from './StoreHero';
 import OffersModal from './OffersModal';
+import ProductModal from './ProductModal';
 import AiChat from './AiChat';
 import styles from './Storefront.module.css';
 
@@ -49,6 +51,7 @@ export default function Storefront() {
   const [metalFilter, setMetalFilter] = useState(''); // '' = Any
   const [viewMode, setViewMode] = useState('grid');    // grid | list
   const [offersOpen, setOffersOpen] = useState(false); // offers modal
+  const [selectedProduct, setSelectedProduct] = useState(null); // product detail modal
 
   // AI filter state — null means inactive, otherwise a Set<product.id>
   const [aiFilteredIds, setAiFilteredIds] = useState(null);
@@ -131,6 +134,7 @@ export default function Storefront() {
     [products],
   );
   const metals = useMemo(() => deriveMetals(products), [products]);
+  const latest = useMemo(() => latestProducts(products, 8), [products]);
 
   // Apply AI filter first (overrides toolbar filters when active),
   // then fall through to category → metal → search → sort.
@@ -202,13 +206,50 @@ export default function Storefront() {
         onClose={() => setOffersOpen(false)}
       />
 
+      <ProductModal
+        open={!!selectedProduct}
+        product={selectedProduct}
+        ownerId={store.owner_id}
+        customerName="Website Visitor"
+        onClose={() => setSelectedProduct(null)}
+      />
+
       {/* Hero section hidden for now — re-enable when ready
       {!hasQuery && !isAiFiltered && (
         <StoreHero offers={offers} products={products} />
       )}
       */}
 
+      {/* ── Latest Arrivals — only on the unfiltered home view ── */}
+      {!hasQuery && !isAiFiltered && latest.length > 0 && (
+        <section className={styles.latestSection}>
+          <div className={styles.sectionHead}>
+            <div>
+              <p className={styles.sectionKicker}>Just In</p>
+              <h2 className={styles.sectionTitle}>Latest Arrivals</h2>
+            </div>
+            <p className={styles.sectionSub}>Our freshest pieces, hand-picked for you</p>
+          </div>
+          <div className={styles.grid}>
+            {latest.map(p => (
+              <StoreProductCard key={p.id} product={p} viewMode="grid" onOpen={setSelectedProduct} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <main className={styles.catalogue} ref={catalogueRef}>
+        {/* Full catalogue heading on the unfiltered home view */}
+        {!hasQuery && !isAiFiltered && (
+          <div className={styles.sectionHead}>
+            <div>
+              <p className={styles.sectionKicker}>Explore</p>
+              <h2 className={styles.sectionTitle}>All Jewellery</h2>
+            </div>
+            <p className={styles.sectionSub}>{visible.length} pieces</p>
+          </div>
+        )}
+
         {/* ── AI Results banner ── */}
         {isAiFiltered && (
           <div className={styles.aiBanner}>
@@ -241,7 +282,7 @@ export default function Storefront() {
         ) : (
           <div className={`${viewMode === 'list' ? styles.listGrid : styles.grid} ${isAiFiltered ? styles.aiHighlightGrid : ''}`}>
             {visible.map(p => (
-              <StoreProductCard key={p.id} product={p} viewMode={viewMode} />
+              <StoreProductCard key={p.id} product={p} viewMode={viewMode} onOpen={setSelectedProduct} />
             ))}
           </div>
         )}
