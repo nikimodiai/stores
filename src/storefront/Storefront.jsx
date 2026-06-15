@@ -15,6 +15,7 @@ import StoreHeader from './StoreHeader';
 import StoreProductCard from './StoreProductCard';
 import StoreNotFound from './StoreNotFound';
 import StoreHero from './StoreHero';
+import OffersModal from './OffersModal';
 import AiChat from './AiChat';
 import styles from './Storefront.module.css';
 
@@ -47,6 +48,7 @@ export default function Storefront() {
   const [sort, setSort] = useState('featured');
   const [metalFilter, setMetalFilter] = useState(''); // '' = Any
   const [viewMode, setViewMode] = useState('grid');    // grid | list
+  const [offersOpen, setOffersOpen] = useState(false); // offers modal
 
   // AI filter state — null means inactive, otherwise a Set<product.id>
   const [aiFilteredIds, setAiFilteredIds] = useState(null);
@@ -190,11 +192,21 @@ export default function Storefront() {
         viewMode={viewMode}
         onViewMode={setViewMode}
         resultCount={visible.length}
+        onOpenOffers={() => setOffersOpen(true)}
       />
 
+      <OffersModal
+        open={offersOpen}
+        offers={offers}
+        storeName={storeName}
+        onClose={() => setOffersOpen(false)}
+      />
+
+      {/* Hero section hidden for now — re-enable when ready
       {!hasQuery && !isAiFiltered && (
         <StoreHero offers={offers} products={products} />
       )}
+      */}
 
       <main className={styles.catalogue} ref={catalogueRef}>
         {/* ── AI Results banner ── */}

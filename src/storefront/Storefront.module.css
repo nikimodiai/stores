@@ -73,6 +73,29 @@
   font-weight: 600;
   background: #faf3e3;
 }
+/* Offers — highlighted entry that opens the offers modal */
+.navOffers {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--sf-gold);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(184, 134, 11, 0.28);
+  transition: background .15s, transform .15s, box-shadow .15s;
+}
+.navOffers:hover {
+  background: var(--sf-gold-dk);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(184, 134, 11, 0.35);
+}
 .headerActions { display: flex; align-items: center; gap: 4px; }
 .iconBtn {
   display: grid;
@@ -647,4 +670,20 @@
     color: var(--sf-ink-mid);
   }
   .mobileItemActive { color: var(--sf-gold-dk); font-weight: 600; background: #faf3e3; }
+  .mobileOffers {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    background: #faf3e3;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 10px;
+    border-radius: 8px;
+    color: var(--sf-gold-dk);
+    margin-bottom: 4px;
+  }
 }

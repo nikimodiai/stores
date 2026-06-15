@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Search, X, SlidersHorizontal, ArrowUpDown, Grid, List, Gem,
-  ShoppingBag, Menu,
+  ShoppingBag, Menu, Tag,
 } from 'lucide-react';
 import { CATEGORIES } from '../lib/config';
 import { SORT_OPTIONS } from '../lib/storefront';
@@ -21,6 +21,7 @@ export default function StoreHeader({
   metals, metalFilter, onMetalFilter,
   viewMode, onViewMode,
   resultCount,
+  onOpenOffers,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -61,6 +62,12 @@ export default function StoreHeader({
         </button>
 
         <nav className={styles.nav}>
+          <button
+            className={styles.navOffers}
+            onClick={onOpenOffers}
+          >
+            <Tag size={13} /> Offers
+          </button>
           <button
             className={active == null ? styles.navItemActive : styles.navItem}
             onClick={() => pick(null)}
@@ -197,6 +204,12 @@ export default function StoreHeader({
       {/* Mobile category drawer */}
       {menuOpen && (
         <nav className={styles.mobileMenu}>
+          <button
+            className={styles.mobileOffers}
+            onClick={() => { onOpenOffers(); setMenuOpen(false); }}
+          >
+            <Tag size={15} /> Offers
+          </button>
           <button
             className={active == null ? styles.mobileItemActive : styles.mobileItem}
             onClick={() => pick(null)}
