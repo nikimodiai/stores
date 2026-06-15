@@ -170,3 +170,26 @@ export function productImages(p) {
   const seen = new Set();
   return urls.filter(u => u && !seen.has(u) && seen.add(u));
 }
+
+/**
+ * Fetch the active offers for a store, scoped strictly to its owner_id.
+ * Filters by is_active = true and valid_to >= today's date.
+ */
+export async function getStorefrontOffers(ownerId) {
+  if (!ownerId) return [];
+
+  const { data, error } = await db
+    .from('offers')
+    .select('id, owner_id, title, description, media_url, media_type, valid_to, is_active')
+    .eq('owner_id', ownerId)
+    .eq('is_active', true);
+
+  if (error) {
+    console.error('Failed to load offers:', error);
+    return [];
+  }
+
+  // Filter valid_to >= today's date (YYYY-MM-DD) in JS to be safe and timezone-consistent
+  const todayStr = new Date().toISOString().split('T')[0];
+  return (data ?? []).filter(o => !o.valid_to || o.valid_to >= todayStr);
+}

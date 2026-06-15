@@ -4,6 +4,7 @@ import { Gem, Sparkles, X } from 'lucide-react';
 import {
   getStoreBySlug,
   getStorefrontProducts,
+  getStorefrontOffers,
   deriveCategories,
   deriveMetals,
   matchesSearch,
@@ -13,6 +14,7 @@ import { CATEGORIES } from '../lib/config';
 import StoreHeader from './StoreHeader';
 import StoreProductCard from './StoreProductCard';
 import StoreNotFound from './StoreNotFound';
+import StoreHero from './StoreHero';
 import AiChat from './AiChat';
 import styles from './Storefront.module.css';
 
@@ -37,6 +39,7 @@ export default function Storefront() {
   const [status, setStatus] = useState('loading'); // loading | ready | notfound | error
   const [store, setStoreRow] = useState(null);
   const [products, setProducts] = useState([]);
+  const [offers, setOffers] = useState([]);
 
   // Toolbar state
   const [active, setActive] = useState(null);     // selected category, null = All
@@ -105,9 +108,13 @@ export default function Storefront() {
           return;
         }
         setStoreRow(row);
-        const prods = await getStorefrontProducts(row.owner_id);
+        const [prods, activeOffers] = await Promise.all([
+          getStorefrontProducts(row.owner_id),
+          getStorefrontOffers(row.owner_id)
+        ]);
         if (cancelled) return;
         setProducts(prods);
+        setOffers(activeOffers);
         setStatus('ready');
       } catch (e) {
         if (!cancelled) setStatus('error');
@@ -184,6 +191,10 @@ export default function Storefront() {
         onViewMode={setViewMode}
         resultCount={visible.length}
       />
+
+      {!hasQuery && !isAiFiltered && (
+        <StoreHero offers={offers} products={products} />
+      )}
 
       <main className={styles.catalogue} ref={catalogueRef}>
         {/* ── AI Results banner ── */}
