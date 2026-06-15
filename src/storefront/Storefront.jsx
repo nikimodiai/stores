@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Gem } from 'lucide-react';
+import { Gem, Sparkles, X } from 'lucide-react';
 import {
   getStoreBySlug,
   getStorefrontProducts,
@@ -13,6 +13,7 @@ import { CATEGORIES } from '../lib/config';
 import StoreHeader from './StoreHeader';
 import StoreProductCard from './StoreProductCard';
 import StoreNotFound from './StoreNotFound';
+import AiChat from './AiChat';
 import styles from './Storefront.module.css';
 
 // Canonical ordering so the nav reads like the admin app (Rings, Earrings…)
@@ -43,6 +44,50 @@ export default function Storefront() {
   const [sort, setSort] = useState('featured');
   const [metalFilter, setMetalFilter] = useState(''); // '' = Any
   const [viewMode, setViewMode] = useState('grid');    // grid | list
+
+  // AI filter state — null means inactive, otherwise a Set<product.id>
+  const [aiFilteredIds, setAiFilteredIds] = useState(null);
+  const [aiLabel, setAiLabel] = useState(''); // the query that triggered it
+  const catalogueRef = useRef(null);
+
+  // Called by AiChat when the webhook returns product SKUs.
+  // Builds a sku→id map from the loaded product list and returns the
+  // number of matched products so AiChat can show the right count.
+  const handleAiResults = useCallback((skus, queryLabel) => {
+    if (!skus || skus.length === 0) {
+      setAiFilteredIds(null);
+      return 0;
+    }
+
+    // Build sku→product.id map (case-insensitive, trimmed)
+    const skuToId = new Map();
+    for (const p of products) {
+      if (p.sku) skuToId.set(String(p.sku).trim().toLowerCase(), p.id);
+    }
+
+    const matched = new Set();
+    for (const sku of skus) {
+      const id = skuToId.get(String(sku).trim().toLowerCase());
+      if (id) matched.add(id);
+    }
+
+    if (matched.size > 0) {
+      setAiFilteredIds(matched);
+      if (queryLabel) setAiLabel(queryLabel);
+      // Scroll catalogue into view after state settles
+      setTimeout(() => catalogueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    } else {
+      // SKUs didn't match anything in the local catalogue — clear filter
+      setAiFilteredIds(null);
+    }
+
+    return matched.size; // returned to AiChat to drive the in-chat note
+  }, [products]);
+
+  const clearAiFilter = useCallback(() => {
+    setAiFilteredIds(null);
+    setAiLabel('');
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,9 +123,15 @@ export default function Storefront() {
   );
   const metals = useMemo(() => deriveMetals(products), [products]);
 
-  // Apply category → metal → search → sort, in that order.
+  // Apply AI filter first (overrides toolbar filters when active),
+  // then fall through to category → metal → search → sort.
   const visible = useMemo(() => {
     let arr = products;
+    if (aiFilteredIds) {
+      // AI mode: show only the matched products, preserve server order
+      arr = arr.filter(p => aiFilteredIds.has(p.id));
+      return arr; // skip further toolbar filters so AI results are shown cleanly
+    }
     if (active) arr = arr.filter(p => p.category === active);
     if (metalFilter) {
       arr = arr.filter(p =>
@@ -91,7 +142,7 @@ export default function Storefront() {
     }
     arr = arr.filter(p => matchesSearch(p, search));
     return sortProducts(arr, sort);
-  }, [products, active, metalFilter, search, sort]);
+  }, [products, aiFilteredIds, active, metalFilter, search, sort]);
 
   if (status === 'loading') {
     return (
@@ -113,6 +164,7 @@ export default function Storefront() {
 
   const storeName = store.store_name || 'Jewellery Store';
   const hasQuery = search || metalFilter || active;
+  const isAiFiltered = !!aiFilteredIds;
 
   return (
     <div className={styles.page}>
@@ -133,18 +185,38 @@ export default function Storefront() {
         resultCount={visible.length}
       />
 
-      <main className={styles.catalogue}>
+      <main className={styles.catalogue} ref={catalogueRef}>
+        {/* ── AI Results banner ── */}
+        {isAiFiltered && (
+          <div className={styles.aiBanner}>
+            <span className={styles.aiBannerLeft}>
+              <Sparkles size={16} className={styles.aiBannerIcon} />
+              <span>
+                <strong>AI Suggestions</strong>
+                {aiLabel ? <span className={styles.aiBannerQuery}> for "{aiLabel}"</span> : null}
+                <span className={styles.aiBannerCount}> · {visible.length} {visible.length === 1 ? 'item' : 'items'}</span>
+              </span>
+            </span>
+            <button className={styles.aiBannerClear} onClick={clearAiFilter} aria-label="Clear AI filter">
+              <X size={14} />
+              Show all
+            </button>
+          </div>
+        )}
+
         {visible.length === 0 ? (
           <div className={styles.emptyState}>
             <Gem size={34} strokeWidth={1} className={styles.notFoundIcon} />
             <p>
-              {hasQuery
-                ? 'No pieces match your search.'
-                : 'This store has no products listed yet.'}
+              {isAiFiltered
+                ? 'The AI found results — but they\'re not in the local catalogue yet.'
+                : hasQuery
+                  ? 'No pieces match your search.'
+                  : 'This store has no products listed yet.'}
             </p>
           </div>
         ) : (
-          <div className={viewMode === 'list' ? styles.listGrid : styles.grid}>
+          <div className={`${viewMode === 'list' ? styles.listGrid : styles.grid} ${isAiFiltered ? styles.aiHighlightGrid : ''}`}>
             {visible.map(p => (
               <StoreProductCard key={p.id} product={p} viewMode={viewMode} />
             ))}
@@ -157,6 +229,9 @@ export default function Storefront() {
         <span className={styles.footerDot}>·</span>
         <span>Powered by Swarnix</span>
       </footer>
+
+      {/* ── AI Chatbot widget ─────────────────────────────────────── */}
+      <AiChat store={store} products={products} onAiResults={handleAiResults} onClearAiFilter={clearAiFilter} />
     </div>
   );
 }

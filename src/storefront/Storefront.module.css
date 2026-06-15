@@ -544,6 +544,79 @@
 }
 .footerDot { opacity: .5; }
 
+/* ── AI Results banner ───────────────────────────────────────────────── */
+.aiBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #faf3e3 0%, #fef9ed 100%);
+  border: 1px solid #e8d8a0;
+  border-radius: 14px;
+  animation: bannerSlide 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes bannerSlide {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.aiBannerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--sf-ink);
+}
+
+.aiBannerIcon {
+  color: var(--sf-gold-dk);
+  flex-shrink: 0;
+}
+
+.aiBannerQuery {
+  color: var(--sf-gold-dk);
+  font-style: italic;
+}
+
+.aiBannerCount {
+  color: var(--sf-ink-mid);
+  font-size: 13px;
+}
+
+.aiBannerClear {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--sf-line);
+  background: #fff;
+  color: var(--sf-ink-mid);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.aiBannerClear:hover {
+  border-color: var(--sf-gold);
+  color: var(--sf-gold-dk);
+  background: var(--sf-bg);
+}
+
+/* Subtle golden ring around each card when AI filter is active */
+.aiHighlightGrid .card,
+.aiHighlightGrid .listCard {
+  border-color: #d4a017;
+  box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.12);
+}
+
 /* ── Mobile drawer + responsive grid ────────────────────────────────── */
 @media (max-width: 860px) {
   .nav { display: none; }
