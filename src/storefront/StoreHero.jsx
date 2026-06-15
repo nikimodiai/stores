@@ -88,7 +88,7 @@ export default function StoreHero({ offers = [], products = [] }) {
             key={slide.id}
             className={`${styles.slide} ${isActive ? styles.activeSlide : ''}`}
           >
-            {/* Blurred full-bleed background to fill gaps */}
+            {/* Blurred fill for any letterbox gaps */}
             <img
               src={slide.imageUrl}
               alt=""
@@ -97,7 +97,7 @@ export default function StoreHero({ offers = [], products = [] }) {
               aria-hidden="true"
             />
 
-            {/* Sharp contained image on top */}
+            {/* Main image — cover, crops to frame */}
             <img
               src={slide.imageUrl}
               alt={slide.title}
@@ -105,10 +105,7 @@ export default function StoreHero({ offers = [], products = [] }) {
               draggable={false}
             />
 
-            {/* Subtle gradient only at the very bottom for text legibility */}
-            <div className={styles.overlay} />
-
-            {/* Slide content wrapper */}
+            {/* Slim info bar pinned to bottom */}
             <div className={styles.slideContent}>
               {slide.badge && (
                 <span className={styles.badge}>{slide.badge}</span>
