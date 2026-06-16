@@ -20,7 +20,7 @@ export default function StoreFooter({ store, storeName, onOpenOffers }) {
     <footer className="mt-16 border-t border-line bg-cream-fade">
       {/* Trust strip */}
       <div className="border-b border-line/70">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-3 px-6 py-7 sm:grid-cols-3 lg:px-8">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-3 px-4 py-7 sm:grid-cols-3 sm:px-6 lg:px-8">
           {[
             [ShieldCheck, 'Certified Quality', 'Hallmarked & assured'],
             [Sparkles, 'AI Selfie Try-On', 'See it on you, instantly'],
@@ -40,7 +40,7 @@ export default function StoreFooter({ store, storeName, onOpenOffers }) {
       </div>
 
       {/* Main */}
-      <div className="mx-auto grid max-w-[1280px] gap-8 px-6 py-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-[1280px] gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
         {/* Brand */}
         <div>
           <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export default function StoreFooter({ store, storeName, onOpenOffers }) {
 
       {/* Bottom bar */}
       <div className="border-t border-line/70">
-        <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-2 px-6 py-5 text-xs text-ink-mid sm:flex-row lg:px-8">
+        <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-ink-mid sm:flex-row sm:px-6 lg:px-8">
           <span>© {year} {storeName}. All rights reserved.</span>
           <span className="inline-flex items-center gap-1.5">
             Powered by

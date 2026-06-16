@@ -20,7 +20,7 @@ import { db, CATEGORIES } from './config';
 // even though the anon RLS policy on the base table technically allows them.
 const STORE_VIEW = 'public_stores';
 const STORE_PUBLIC_COLS =
-  'id, owner_id, store_name, slug, address, phone, whatsapp_phone, status';
+  'id, owner_id, store_name, slug, address, phone, whatsapp_phone, status, selfie_tryon_tier';
 
 // Columns from `products` the storefront actually renders.
 const PRODUCT_PUBLIC_COLS = [
@@ -326,6 +326,70 @@ export function fileToBase64(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+/**
+ * Normalise a WhatsApp number to digits-only for comparison.
+ * Strips all non-digit characters so "+91 8591442495", "918591442495",
+ * and "8591442495" can all be compared consistently.
+ * @param {string} num
+ * @returns {string}
+ */
+function normalisePhone(num) {
+  return String(num || '').replace(/\D/g, '');
+}
+
+/**
+ * Check whether a customer is allowed to use the Virtual Try-On feature
+ * for this store, given the store's selfie_tryon_tier setting.
+ *
+ * @param {string} ownerId         - store.owner_id
+ * @param {string} whatsappNumber  - the number the customer typed
+ * @param {string} tier            - store.selfie_tryon_tier ('all'|'vip_and_vvip'|'vvip')
+ * @returns {Promise<{ allowed: boolean, reason: 'all'|'found'|'not_found'|'wrong_tier'|'error' }>}
+ */
+export async function checkTryOnAccess(ownerId, whatsappNumber, tier) {
+  // 'all' needs no lookup — anyone may proceed.
+  if (!tier || tier === 'all') return { allowed: true, reason: 'all' };
+
+  const normInput = normalisePhone(whatsappNumber);
+  if (!normInput) return { allowed: false, reason: 'not_found' };
+
+  try {
+    // Fetch every customer for this store, then match in JS after normalising
+    // stored numbers — avoids relying on an exact DB string format.
+    const { data, error } = await db
+      .from('customers')
+      .select('whatsapp_number, tier')
+      .eq('owner_id', ownerId);
+
+    if (error) return { allowed: false, reason: 'error' };
+
+    const match = (data || []).find(
+      c => normalisePhone(c.whatsapp_number) === normInput,
+    );
+
+    if (!match) return { allowed: false, reason: 'not_found' };
+
+    const customerTier = (match.tier || '').toUpperCase();
+
+    if (tier === 'vvip') {
+      return customerTier === 'VVIP'
+        ? { allowed: true, reason: 'found' }
+        : { allowed: false, reason: 'wrong_tier' };
+    }
+
+    if (tier === 'vip_and_vvip') {
+      return customerTier === 'VIP' || customerTier === 'VVIP'
+        ? { allowed: true, reason: 'found' }
+        : { allowed: false, reason: 'wrong_tier' };
+    }
+
+    // Unknown tier value — fail safe.
+    return { allowed: false, reason: 'error' };
+  } catch {
+    return { allowed: false, reason: 'error' };
+  }
 }
 
 /**

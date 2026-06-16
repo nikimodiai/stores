@@ -11,6 +11,11 @@
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
   html, body, #root { height: 100%; min-height: 100vh; }
+  /* Guard against horizontal overflow on mobile: stray absolute/translate
+     elements or wide children can push the page wider than the viewport,
+     which makes fixed-width content (modals, CTAs) appear to spill off the
+     right edge. Clamp the page to the viewport width. */
+  html, body { max-width: 100%; overflow-x: hidden; }
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     @apply bg-cream text-ink font-sans antialiased;
@@ -33,9 +38,11 @@
   /* Thin luxe gold rule, used atop the header and as section dividers */
   .gold-rule { @apply h-[3px] w-full bg-gold-rule; }
 
-  /* Primary gold button — the main storefront CTA */
+  /* Primary gold button — the main storefront CTA.
+     max-w-full keeps a full-width button from ever spilling past its
+     container on narrow screens; min-w-0 lets the label truncate instead. */
   .btn-gold {
-    @apply inline-flex items-center justify-center gap-2 rounded-full
+    @apply inline-flex max-w-full items-center justify-center gap-2 rounded-full
            bg-gold-sheen px-6 py-3 font-sans text-sm font-semibold text-white
            shadow-gold transition-all duration-200
            hover:-translate-y-0.5 hover:shadow-[0_10px_24px_-4px_rgba(184,134,11,.5)]
@@ -43,7 +50,7 @@
   }
   /* Secondary outline button on cream */
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-full
+    @apply inline-flex max-w-full items-center justify-center gap-2 rounded-full
            border border-gold-300 bg-white/70 px-6 py-3 font-sans text-sm font-semibold
            text-gold-700 transition-all duration-200
            hover:border-gold-500 hover:bg-white hover:-translate-y-0.5;

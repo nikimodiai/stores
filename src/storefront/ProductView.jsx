@@ -173,6 +173,7 @@ export default function ProductView({ product, ownerId, store, customerName = 'W
         open={tryOnOpen}
         ownerId={ownerId}
         product={product}
+        store={store}
         customerName={customerName}
         onClose={() => setTryOnOpen(false)}
       />
