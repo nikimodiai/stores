@@ -190,6 +190,7 @@ async function upsertCustomer({ ownerId, name, whatsappNumber, city }) {
     whatsapp_number: whatsappNumber.trim(),
     city: city?.trim() || null,
     tier: 'Regular',
+    added_via: 'website',
   });
 }
 
@@ -328,7 +329,7 @@ function IntakeForm({ onSubmit, storeName }) {
     if (Object.keys(e).length) { setErrors(e); return; }
     onSubmit({
       name: name.trim(),
-      whatsappNumber: countryCode + localPhone.trim(),
+      whatsappNumber: countryCode + ' ' + localPhone.trim(),
       city: city.trim(),
     });
   };
