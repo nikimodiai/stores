@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import styles from './AiChat.module.css';
+import {
+  Sparkles, X, Send, Image as ImageIcon, ArrowUp, AlertTriangle,
+} from 'lucide-react';
 
 // ── Constants ────────────────────────────────────────────────────────
 const WEBHOOK_URL = 'https://n8n.srv1639765.hstgr.cloud/webhook/swarnix-web-chat';
@@ -13,13 +15,11 @@ function getOrCreateSessionId() {
   const existingId = localStorage.getItem(SESSION_KEY);
   const existingTs = parseInt(localStorage.getItem(SESSION_TS_KEY) || '0', 10);
 
-  // If session exists and hasn't timed out, reuse it
   if (existingId && now - existingTs < SESSION_TIMEOUT_MS) {
-    localStorage.setItem(SESSION_TS_KEY, String(now)); // refresh timestamp
+    localStorage.setItem(SESSION_TS_KEY, String(now));
     return existingId;
   }
 
-  // Create fresh session
   const newId = crypto.randomUUID();
   localStorage.setItem(SESSION_KEY, newId);
   localStorage.setItem(SESSION_TS_KEY, String(now));
@@ -35,7 +35,6 @@ function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      // Strip the data URI prefix, e.g. "data:image/jpeg;base64,"
       const result = reader.result;
       const base64 = result.split(',')[1];
       resolve({ base64, mimeType: file.type });
@@ -45,100 +44,57 @@ function fileToBase64(file) {
   });
 }
 
-// ── Sparkle SVG icon ─────────────────────────────────────────────────
-function SparkleIcon({ size = 22 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2 L13.5 9 L20 10.5 L13.5 12 L12 19 L10.5 12 L4 10.5 L10.5 9 Z" />
-      <path d="M19 3 L19.7 5.3 L22 6 L19.7 6.7 L19 9 L18.3 6.7 L16 6 L18.3 5.3 Z" />
-    </svg>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="22" y1="2" x2="11" y2="13" />
-      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-    </svg>
-  );
-}
-
-function ImageIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function XSmallIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
 // ── Message bubble ────────────────────────────────────────────────────
 function MessageBubble({ msg, onClearAiFilter }) {
   if (msg.role === 'user') {
     return (
-      <div className={styles.userRow}>
+      <div className="flex flex-col items-end gap-1.5">
         {msg.imagePreview && (
-          <div className={styles.userImagePreview}>
-            <img src={msg.imagePreview} alt="Uploaded" />
+          <div className="overflow-hidden rounded-2xl rounded-br-md border border-gold-200">
+            <img src={msg.imagePreview} alt="Uploaded" className="max-h-44 w-auto object-cover" />
           </div>
         )}
-        {msg.text && <div className={styles.userBubble}>{msg.text}</div>}
+        {msg.text && (
+          <div className="max-w-[80%] rounded-2xl rounded-br-md bg-gold-sheen px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-gold">
+            {msg.text}
+          </div>
+        )}
       </div>
     );
   }
 
   // Bot message — render the ordered messages array
   return (
-    <div className={styles.botRow}>
-      <div className={styles.botAvatar}>
-        <SparkleIcon size={14} />
-      </div>
-      <div className={styles.botMessages}>
+    <div className="flex gap-2.5">
+      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gold-100 text-gold-700">
+        <Sparkles size={14} />
+      </span>
+      <div className="flex max-w-[85%] flex-col gap-2">
         {msg.messages.map((m, i) => {
           if (m.type === 'text') {
             return (
-              <div key={i} className={styles.botBubble}>
+              <div key={i} className="whitespace-pre-line rounded-2xl rounded-tl-md border border-line bg-white px-3.5 py-2.5 text-sm leading-relaxed text-ink">
                 {m.text}
               </div>
             );
           }
           if (m.type === 'image') {
             return (
-              <div key={i} className={styles.botImageCard}>
-                <img src={m.imageUrl} alt={m.caption || 'Product'} />
-                {m.caption && <p className={styles.botImageCaption}>{m.caption}</p>}
+              <div key={i} className="overflow-hidden rounded-2xl rounded-tl-md border border-line bg-white">
+                <img src={m.imageUrl} alt={m.caption || 'Product'} className="w-full object-cover" />
+                {m.caption && <p className="px-3 py-2 text-xs text-ink-mid">{m.caption}</p>}
               </div>
             );
           }
           if (m.type === 'page_filter') {
             return (
-              <div key={i} className={styles.pageFilterNote}>
-                <span className={styles.pageFilterArrow}>↑</span>
+              <div key={i} className="flex items-center gap-2 rounded-xl border border-gold-200 bg-gold-50 px-3 py-2 text-xs text-ink">
+                <ArrowUp size={14} className="shrink-0 text-gold-700" />
                 <span>
                   <strong>{m.count} item{m.count !== 1 ? 's' : ''}</strong> filtered on the page above
                 </span>
                 <button
-                  className={styles.pageFilterClear}
+                  className="ml-auto shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-gold-700 transition hover:bg-gold-100"
                   onClick={onClearAiFilter}
                   aria-label="Clear AI filter"
                 >
@@ -157,12 +113,18 @@ function MessageBubble({ msg, onClearAiFilter }) {
 // ── Typing indicator ─────────────────────────────────────────────────
 function TypingIndicator() {
   return (
-    <div className={styles.botRow}>
-      <div className={styles.botAvatar}>
-        <SparkleIcon size={14} />
-      </div>
-      <div className={styles.typingBubble}>
-        <span /><span /><span />
+    <div className="flex gap-2.5">
+      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gold-100 text-gold-700">
+        <Sparkles size={14} />
+      </span>
+      <div className="flex items-center gap-1 rounded-2xl rounded-tl-md border border-line bg-white px-4 py-3.5">
+        {[0, 1, 2].map(i => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold-400"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -184,7 +146,6 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Scroll to latest message
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -193,13 +154,24 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
     scrollToBottom();
   }, [messages, loading, scrollToBottom]);
 
-  // Focus input when chat opens
   useEffect(() => {
     if (open) {
       setShowBadge(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open]);
+
+  // Auto-grow the input: stays one line at rest, expands with multi-line
+  // text up to the max height, and only then reveals a scrollbar.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const max = 112; // px — matches max-h-28
+    const next = Math.min(el.scrollHeight, max);
+    el.style.height = `${next}px`;
+    el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
+  }, [input, open]);
 
   // Show welcome message on first open
   useEffect(() => {
@@ -210,7 +182,7 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
         messages: [
           {
             type: 'text',
-            text: `Hello! Welcome to ${store.store_name || 'our store'} ✨\n\nI'm your personal jewellery assistant. Ask me anything about our collection — I can help you find rings, earrings, necklaces, and much more. You can also send me an image to search by look!`,
+            text: `Hello! Welcome to ${store.store_name || 'our store'}.\n\nI'm your personal jewellery assistant. Ask me anything about our collection — I can help you find rings, earrings, necklaces, and much more. You can also send me an image to search by look!`,
           },
         ],
       }]);
@@ -227,7 +199,6 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
     touchSession();
     const sessionId = getOrCreateSessionId();
 
-    // Optimistic user message
     const userMsg = {
       id: Date.now(),
       role: 'user',
@@ -277,10 +248,6 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
       const botMessages = data.messages || [];
 
       // ── AI → Page filter bridge (SKU-based) ──────────────────────
-      // Pull every SKU the AI included in an image message, pass them
-      // to Storefront which does a sku→id lookup and filters the grid.
-      // onAiResults returns the number of products actually matched so
-      // the in-chat note shows the correct count (not the raw SKU count).
       const skusSet = new Set();
       const addSkusFromString = (str) => {
         if (!str) return;
@@ -308,13 +275,10 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
             type:  'page_filter',
             count: matchedCount,
           };
-          // Filter out the image messages since they are shown on the website
           filteredBotMessages = botMessages.filter(m => m.type !== 'image');
         }
       }
 
-      // Append the page-filter note as a final message so the user
-      // sees the link between chat and the filtered catalogue above.
       const finalMessages = pageFilterNote
         ? [...filteredBotMessages, pageFilterNote]
         : botMessages;
@@ -326,7 +290,6 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
       }]);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
-      // Remove optimistic user message on error
       setMessages(prev => prev.filter(m => m.id !== userMsg.id));
     } finally {
       setLoading(false);
@@ -361,48 +324,61 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
   return (
     <>
       {/* ── Floating trigger button ── */}
-      <div className={styles.fabWrap}>
+      <div className="fixed bottom-5 right-5 z-[90] flex items-center gap-2 sm:bottom-6 sm:right-6">
         {showBadge && !open && (
-          <div className={styles.fabTooltip}>How can I help you?</div>
+          <span className="hidden animate-fadeUp rounded-full bg-white px-3.5 py-2 text-[13px] font-medium text-ink shadow-lift ring-1 ring-line sm:block">
+            How can I help you?
+          </span>
         )}
         <button
-          className={`${styles.fab} ${open ? styles.fabOpen : ''}`}
+          className="grid h-14 w-14 place-items-center rounded-full bg-gold-sheen text-white shadow-[0_8px_24px_-4px_rgba(184,134,11,.55)] transition hover:scale-105 active:scale-95"
           onClick={() => setOpen(o => !o)}
           aria-label={open ? 'Close chat' : 'Open AI chat'}
           id="swarnix-chat-fab"
         >
-          {open ? <CloseIcon /> : <SparkleIcon size={24} />}
+          {open ? <X size={24} /> : <Sparkles size={24} />}
         </button>
       </div>
 
       {/* ── Chat window ── */}
-      <div className={`${styles.chatWindow} ${open ? styles.chatWindowOpen : ''}`} role="dialog" aria-label="AI Jewellery Assistant">
-
+      <div
+        className={`fixed bottom-0 right-0 z-[95] flex w-full flex-col bg-cream shadow-[0_-10px_60px_-15px_rgba(42,33,24,.4)] transition-all duration-300 sm:bottom-24 sm:right-6 sm:h-[600px] sm:max-h-[80vh] sm:w-[390px] sm:rounded-3xl sm:border sm:border-line ${
+          open
+            ? 'pointer-events-auto h-[85vh] translate-y-0 rounded-t-3xl opacity-100'
+            : 'pointer-events-none h-0 translate-y-4 opacity-0'
+        }`}
+        role="dialog"
+        aria-label="AI Jewellery Assistant"
+      >
         {/* Header */}
-        <div className={styles.chatHeader}>
-          <div className={styles.chatHeaderIcon}>
-            <SparkleIcon size={16} />
-          </div>
-          <div className={styles.chatHeaderText}>
-            <span className={styles.chatHeaderTitle}>AI Jewellery Assistant</span>
-            <span className={styles.chatHeaderSub}>
-              <span className={styles.onlineDot} /> Powered by Swarnix
+        <div className="flex items-center gap-2.5 rounded-t-3xl border-b border-line bg-gradient-to-r from-gold-50 to-cream px-4 py-3.5">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-gold-sheen text-white shadow-gold">
+            <Sparkles size={16} />
+          </span>
+          <div className="flex min-w-0 flex-col">
+            <span className="text-sm font-bold text-ink">AI Jewellery Assistant</span>
+            <span className="flex items-center gap-1.5 text-[11px] text-ink-mid">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Powered by Swarnix
             </span>
           </div>
-          <button className={styles.chatCloseBtn} onClick={() => setOpen(false)} aria-label="Close chat">
-            <CloseIcon />
+          <button
+            className="ml-auto grid h-8 w-8 place-items-center rounded-full text-ink-mid transition hover:bg-sand hover:text-ink"
+            onClick={() => setOpen(false)}
+            aria-label="Close chat"
+          >
+            <X size={18} />
           </button>
         </div>
 
         {/* Messages */}
-        <div className={styles.chatBody} id="swarnix-chat-messages">
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4" id="swarnix-chat-messages">
           {messages.map(msg => (
             <MessageBubble key={msg.id} msg={msg} onClearAiFilter={onClearAiFilter} />
           ))}
           {loading && <TypingIndicator />}
           {error && (
-            <div className={styles.errorBanner}>
-              ⚠ {error}
+            <div className="flex items-center gap-2 rounded-xl bg-maroon-50 px-3 py-2.5 text-sm text-maroon-600">
+              <AlertTriangle size={16} className="shrink-0" /> {error}
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -410,36 +386,40 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
 
         {/* Image preview strip */}
         {imagePreview && (
-          <div className={styles.imagePreviewStrip}>
-            <img src={imagePreview} alt="Selected" className={styles.imagePreviewThumb} />
-            <span className={styles.imagePreviewName}>{imageFile?.name}</span>
-            <button className={styles.imagePreviewRemove} onClick={removeImage} aria-label="Remove image">
-              <XSmallIcon />
+          <div className="flex items-center gap-2.5 border-t border-line bg-ivory px-4 py-2.5">
+            <img src={imagePreview} alt="Selected" className="h-10 w-10 rounded-lg object-cover" />
+            <span className="flex-1 truncate text-xs text-ink-mid">{imageFile?.name}</span>
+            <button
+              className="grid h-6 w-6 place-items-center rounded-full text-ink-mid transition hover:bg-sand hover:text-ink"
+              onClick={removeImage}
+              aria-label="Remove image"
+            >
+              <X size={14} />
             </button>
           </div>
         )}
 
         {/* Input area */}
-        <div className={styles.chatInputArea}>
+        <div className="flex items-end gap-2 border-t border-line bg-cream px-3 py-3">
           <input
             type="file"
             accept="image/*"
             ref={fileInputRef}
-            style={{ display: 'none' }}
+            className="hidden"
             onChange={handleImageSelect}
             id="swarnix-chat-file"
           />
           <button
-            className={styles.imageBtn}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink-mid transition hover:bg-sand hover:text-gold-700"
             onClick={() => fileInputRef.current?.click()}
             aria-label="Upload image for visual search"
             title="Search by image"
           >
-            <ImageIcon />
+            <ImageIcon size={19} />
           </button>
           <textarea
             ref={inputRef}
-            className={styles.chatInput}
+            className="max-h-28 flex-1 resize-none overflow-y-hidden rounded-2xl border border-line bg-white px-3.5 py-2.5 text-sm leading-5 text-ink outline-none transition placeholder:text-ink-soft focus:border-gold-500 focus:ring-2 focus:ring-gold-500/15"
             placeholder="Ask about rings, earrings, necklaces…"
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -448,13 +428,15 @@ export default function AiChat({ store, products, onAiResults, onClearAiFilter }
             id="swarnix-chat-input"
           />
           <button
-            className={`${styles.sendBtn} ${canSend ? styles.sendBtnActive : ''}`}
+            className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition ${
+              canSend ? 'bg-gold-sheen text-white shadow-gold hover:scale-105' : 'bg-sand text-ink-soft'
+            }`}
             onClick={sendMessage}
             disabled={!canSend}
             aria-label="Send message"
             id="swarnix-chat-send"
           >
-            <SendIcon />
+            <Send size={17} />
           </button>
         </div>
       </div>

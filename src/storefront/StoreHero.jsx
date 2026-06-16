@@ -1,160 +1,122 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import styles from './StoreHero.module.css';
+import { useMemo } from 'react';
+import { Sparkles, ArrowRight, Tag, ShieldCheck, Camera } from 'lucide-react';
+import { productImages } from '../lib/storefront';
 
-export default function StoreHero({ offers = [], products = [] }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const timerRef = useRef(null);
-
-  // 1. Prepare slides: up to 5 items, starting with valid active offers, then latest products
-  const slides = [];
-
-  // Add offers
-  offers.forEach(o => {
-    if (slides.length < 5 && o.media_url && o.media_type === 'image') {
-      slides.push({
-        id: `offer-${o.id}`,
-        imageUrl: o.media_url,
-        title: o.title,
-        description: o.description,
-        badge: 'Exclusive Offer',
-        type: 'offer',
-      });
+// ── Premium static hero ─────────────────────────────────────────────
+// Editorial Tanishq-style hero: warm-gold gradient field, an offset
+// collage of the store's own product photos on the right, a bold serif
+// headline + subcopy on the left, and three real CTAs:
+//   • Explore Collection  → scrolls to the catalogue
+//   • Selfie Try-On       → opens try-on on a featured product
+//   • View Offers         → opens the offers modal (only if offers exist)
+// No external imagery required — falls back to a clean gradient panel
+// when the store has no usable product photos yet.
+export default function StoreHero({
+  storeName,
+  products = [],
+  offers = [],
+  productCount = 0,
+  onExplore,
+  onOpenOffers,
+  onTryOn,
+}) {
+  // Pick up to 3 product photos for the collage (first usable image each).
+  const collage = useMemo(() => {
+    const out = [];
+    for (const p of products) {
+      const img = productImages(p)[0];
+      if (img) out.push({ id: p.id, img, name: p.name });
+      if (out.length === 3) break;
     }
-  });
+    return out;
+  }, [products]);
 
-  // Fill remaining slots with latest products
-  products.forEach(p => {
-    if (slides.length < 5) {
-      // Find a valid image for this product
-      const img = p.primary_image_url || (Array.isArray(p.images) && p.images[0]);
-      if (img) {
-        slides.push({
-          id: `product-${p.id}`,
-          imageUrl: img,
-          title: p.name,
-          description: p.price ? `Featured Piece · ₹${Number(p.price).toLocaleString()}` : p.description || 'Featured Collection',
-          badge: 'New Arrival',
-          type: 'product',
-        });
-      }
-    }
-  });
-
-  const nextSlide = useCallback(() => {
-    if (slides.length <= 1) return;
-    setCurrentIndex(prev => (prev + 1) % slides.length);
-  }, [slides.length]);
-
-  const prevSlide = useCallback(() => {
-    if (slides.length <= 1) return;
-    setCurrentIndex(prev => (prev - 1 + slides.length) % slides.length);
-  }, [slides.length]);
-
-  // Set up auto-play interval of 4 seconds
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    timerRef.current = setInterval(nextSlide, 4000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [nextSlide, slides.length]);
-
-  // Reset timer on manual navigation
-  const handleManualNav = (action) => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = setInterval(nextSlide, 4000);
-    }
-    if (action === 'next') nextSlide();
-    if (action === 'prev') prevSlide();
-  };
-
-  const handleDotClick = (index) => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = setInterval(nextSlide, 4000);
-    }
-    setCurrentIndex(index);
-  };
-
-  if (slides.length === 0) return null;
+  const hasOffers = offers.length > 0;
+  const featured = collage[0];
 
   return (
-    <div className={styles.heroContainer} aria-label="Featured promotions">
-      {slides.map((slide, idx) => {
-        const isActive = idx === currentIndex;
-        return (
-          <div
-            key={slide.id}
-            className={`${styles.slide} ${isActive ? styles.activeSlide : ''}`}
-          >
-            {/* Blurred fill for the letterbox gaps on the sides */}
-            <img
-              src={slide.imageUrl}
-              alt=""
-              className={styles.slideBlur}
-              draggable={false}
-              aria-hidden="true"
-            />
+    <section className="relative overflow-hidden border-b border-line bg-hero-warm">
+      {/* Soft decorative glow */}
+      <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-gold-200/40 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-maroon-100/40 blur-3xl" aria-hidden="true" />
 
-            {/* Main image — contained, whole photo visible */}
-            <img
-              src={slide.imageUrl}
-              alt={slide.title}
-              className={styles.slideImg}
-              draggable={false}
-            />
+      <div className="relative mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-6 lg:px-8 lg:py-20">
+        {/* ── Copy ── */}
+        <div className="animate-fadeUp">
+          <span className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-white/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-luxe text-gold-700 backdrop-blur">
+            <Sparkles size={13} /> Handcrafted · Hallmarked · Timeless
+          </span>
 
-            {/* Left-side gradient so text reads cleanly */}
-            <div className={styles.overlay} />
+          <h1 className="display mt-5 text-[34px] leading-[1.1] sm:text-5xl lg:text-[56px]">
+            Jewellery that<br />
+            <span className="bg-gold-sheen bg-clip-text text-transparent">tells your story</span>
+          </h1>
 
-            {/* Text block on the left */}
-            <div className={styles.slideContent}>
-              {slide.badge && (
-                <span className={styles.badge}>{slide.badge}</span>
-              )}
-              <h2 className={styles.title}>{slide.title}</h2>
-              {slide.description && (
-                <p className={styles.description}>{slide.description}</p>
-              )}
-            </div>
+          <p className="mt-5 max-w-[48ch] text-[15px] leading-relaxed text-ink-mid sm:text-base">
+            Discover {productCount > 0 ? `${productCount}+ ` : ''}exquisite pieces from{' '}
+            <span className="font-semibold text-ink">{storeName}</span> — gold, diamond and silver,
+            each crafted to be treasured for generations. Now with an AI Selfie Try-On to see it on you, instantly.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <button onClick={onExplore} className="btn-gold">
+              Explore Collection <ArrowRight size={17} />
+            </button>
+            {featured && (
+              <button onClick={() => onTryOn?.(products.find(p => p.id === featured.id))} className="btn-outline">
+                <Camera size={16} /> Selfie Try-On
+              </button>
+            )}
+            {hasOffers && (
+              <button
+                onClick={onOpenOffers}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-maroon-600 transition hover:text-maroon-700"
+              >
+                <Tag size={16} /> View Offers
+              </button>
+            )}
           </div>
-        );
-      })}
 
-      {/* Manual Navigation Arrows */}
-      {slides.length > 1 && (
-        <>
-          <button
-            className={`${styles.navBtn} ${styles.prev}`}
-            onClick={() => handleManualNav('prev')}
-            aria-label="Previous slide"
-          >
-            ‹
-          </button>
-          <button
-            className={`${styles.navBtn} ${styles.next}`}
-            onClick={() => handleManualNav('next')}
-            aria-label="Next slide"
-          >
-            ›
-          </button>
-        </>
-      )}
-
-      {/* Navigation Dots */}
-      {slides.length > 1 && (
-        <div className={styles.dotsContainer}>
-          {slides.map((_, idx) => (
-            <button
-              key={idx}
-              className={`${styles.dot} ${idx === currentIndex ? styles.activeDot : ''}`}
-              onClick={() => handleDotClick(idx)}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
+          {/* Trust row */}
+          <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] text-ink-mid">
+            <span className="inline-flex items-center gap-2"><ShieldCheck size={16} className="text-gold-700" /> Certified quality</span>
+            <span className="inline-flex items-center gap-2"><Sparkles size={16} className="text-gold-700" /> AI Try-On</span>
+            <span className="inline-flex items-center gap-2"><Tag size={16} className="text-gold-700" /> Best price assured</span>
+          </div>
         </div>
-      )}
-    </div>
+
+        {/* ── Collage ── */}
+        <div className="relative hidden h-[420px] lg:block animate-scaleIn">
+          {collage.length > 0 ? (
+            <>
+              {/* Large primary */}
+              <figure className="absolute right-2 top-0 h-[300px] w-[260px] overflow-hidden rounded-[28px] border border-white/60 bg-sand shadow-cardHov ring-1 ring-gold-200/50">
+                <img src={collage[0].img} alt={collage[0].name} className="h-full w-full object-cover object-top" draggable={false} />
+              </figure>
+              {/* Lower-left */}
+              {collage[1] && (
+                <figure className="absolute bottom-2 left-0 h-[210px] w-[200px] overflow-hidden rounded-[24px] border border-white/60 bg-sand shadow-lift ring-1 ring-gold-200/50">
+                  <img src={collage[1].img} alt={collage[1].name} className="h-full w-full object-cover object-top" draggable={false} />
+                </figure>
+              )}
+              {/* Small accent */}
+              {collage[2] && (
+                <figure className="absolute bottom-24 right-0 h-[140px] w-[140px] overflow-hidden rounded-[20px] border border-white/60 bg-sand shadow-lift ring-1 ring-gold-200/50">
+                  <img src={collage[2].img} alt={collage[2].name} className="h-full w-full object-cover object-top" draggable={false} />
+                </figure>
+              )}
+              {/* Floating badge */}
+              <span className="absolute left-6 top-6 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-gold-700 shadow-lift backdrop-blur">
+                <Sparkles size={13} /> New Arrivals
+              </span>
+            </>
+          ) : (
+            <div className="grid h-full place-items-center rounded-[28px] border border-gold-200/60 bg-white/40">
+              <Sparkles size={64} strokeWidth={1} className="text-gold-300" />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

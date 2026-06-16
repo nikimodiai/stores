@@ -12,7 +12,7 @@
 // pull wa_access_token / waba_id / owner_id-secrets / phone tokens into
 // the browser, even though the anon RLS policy technically allows it.
 // ────────────────────────────────────────────────────────────────────
-import { db } from './config';
+import { db, CATEGORIES } from './config';
 
 // The storefront reads stores through the `public_stores` view, which
 // exposes ONLY customer-safe columns (see 2026_06_14_store_slug.sql).
@@ -131,6 +131,61 @@ export function deriveCategories(products) {
     if (p.category) seen.add(p.category);
   }
   return Array.from(seen);
+}
+
+const CATEGORY_LABELS = Object.fromEntries(CATEGORIES.map(c => [c.value, c.label]));
+
+/**
+ * The sub-category bucket a product belongs to, for the in-category
+ * sub-filter row. When a product has no sub_category, it's grouped into a
+ * meaningful fallback — "Other <Category label>" (e.g. "Other Rings") — so
+ * customers still get a clean, named option instead of a blank pill.
+ */
+export function subCategoryOf(p) {
+  const sub = p.sub_category && String(p.sub_category).trim();
+  if (sub) return sub;
+  const catLabel = CATEGORY_LABELS[p.category] || p.category || 'Pieces';
+  return `Other ${catLabel}`;
+}
+
+/**
+ * Distinct sub-category buckets present within a single category, ordered
+ * so real sub-categories come first (alphabetically) and the "Other …"
+ * fallback bucket always sinks to the end. Pass the full product array and
+ * the active category value.
+ */
+// Real sub-categories sort alphabetically; the "Other …" fallback sinks last.
+function sortSubCategories(a, b) {
+  const aOther = a.startsWith('Other ');
+  const bOther = b.startsWith('Other ');
+  if (aOther !== bOther) return aOther ? 1 : -1;
+  return a.localeCompare(b);
+}
+
+export function deriveSubCategories(products, category) {
+  if (!category) return [];
+  const seen = new Set();
+  for (const p of products) {
+    if (p.category === category) seen.add(subCategoryOf(p));
+  }
+  return Array.from(seen).sort(sortSubCategories);
+}
+
+/**
+ * One pass over the catalogue → { [category]: [sortedSubCategories] }.
+ * Used by the header's hover mega-menu so it can show each category's
+ * sub-categories without recomputing per hover.
+ */
+export function deriveSubCategoryMap(products) {
+  const map = {};
+  for (const p of products) {
+    if (!p.category) continue;
+    (map[p.category] ||= new Set()).add(subCategoryOf(p));
+  }
+  for (const cat of Object.keys(map)) {
+    map[cat] = Array.from(map[cat]).sort(sortSubCategories);
+  }
+  return map;
 }
 
 // Sort options offered in the storefront toolbar (mirrors the admin app,

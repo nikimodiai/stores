@@ -1,28 +1,78 @@
-/* ── Storefront global base ──────────────────────────────────────────
-   Minimal: fonts, reset, base body, and the shared spinner. All other
-   styling is scoped in src/storefront/Storefront.module.css. */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+/* ── Swarnix storefront — Tailwind base ──────────────────────────────
+   Fonts + Tailwind layers. Bespoke tokens live in tailwind.config.js.
+   A small @layer components holds the few patterns that repeat enough
+   to deserve a name (premium buttons, gold rule, spinner). */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-html, body, #root { height: 100%; min-height: 100vh; }
-html { -webkit-text-size-adjust: 100%; }
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body, #root { height: 100%; min-height: 100vh; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    @apply bg-cream text-ink font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: rgba(184, 134, 11, 0.18); }
 
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: #fffdf9;
-  color: #2a2118;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  /* Refined scrollbar (desktop) */
+  @media (pointer: fine) {
+    * { scrollbar-width: thin; scrollbar-color: #e0cf9e transparent; }
+    *::-webkit-scrollbar { width: 9px; height: 9px; }
+    *::-webkit-scrollbar-thumb {
+      background: #e6d6ac; border-radius: 999px; border: 2px solid transparent; background-clip: padding-box;
+    }
+    *::-webkit-scrollbar-thumb:hover { background: #d9be7f; background-clip: padding-box; }
+  }
 }
 
-/* Shared spinner used by the storefront loading state */
-.spinner {
-  width: 44px;
-  height: 44px;
-  border: 3px solid rgba(184, 134, 11, .18);
-  border-top: 3px solid #b8860b;
-  border-radius: 50%;
-  animation: spin .9s linear infinite;
+@layer components {
+  /* Thin luxe gold rule, used atop the header and as section dividers */
+  .gold-rule { @apply h-[3px] w-full bg-gold-rule; }
+
+  /* Primary gold button — the main storefront CTA */
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-full
+           bg-gold-sheen px-6 py-3 font-sans text-sm font-semibold text-white
+           shadow-gold transition-all duration-200
+           hover:-translate-y-0.5 hover:shadow-[0_10px_24px_-4px_rgba(184,134,11,.5)]
+           active:translate-y-0 disabled:opacity-60 disabled:pointer-events-none;
+  }
+  /* Secondary outline button on cream */
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full
+           border border-gold-300 bg-white/70 px-6 py-3 font-sans text-sm font-semibold
+           text-gold-700 transition-all duration-200
+           hover:border-gold-500 hover:bg-white hover:-translate-y-0.5;
+  }
+  /* Section eyebrow / kicker */
+  .kicker {
+    @apply text-[11px] font-bold uppercase tracking-luxe text-gold-700;
+  }
+  /* Serif display heading */
+  .display {
+    @apply font-serif font-bold text-ink;
+  }
+
+  /* Shared loading spinner */
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid rgba(184, 134, 11, 0.18);
+    border-top: 3px solid #b8860b;
+    border-radius: 50%;
+    @apply animate-spin;
+  }
+  /* Image shimmer placeholder */
+  .img-shimmer {
+    background: linear-gradient(100deg, #f3ecdd 30%, #fbf6ea 50%, #f3ecdd 70%);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Hide number-input spinners, smooth momentum scroll on mobile rails */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

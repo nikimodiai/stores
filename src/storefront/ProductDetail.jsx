@@ -3,8 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Gem } from 'lucide-react';
 import { getStoreBySlug, getStorefrontProduct } from '../lib/storefront';
 import ProductView from './ProductView';
-import storeStyles from './Storefront.module.css';
-import styles from './ProductDetail.module.css';
+import StoreFooter from './StoreFooter';
 
 // ── Product detail page (route) ─────────────────────────────────────
 // Route: /store/:storeSlug/product/:productId — used for deep links and
@@ -42,19 +41,19 @@ export default function ProductDetail() {
 
   if (status === 'loading') {
     return (
-      <div className={storeStyles.page}>
-        <div className={storeStyles.centerState}><div className="spinner" /></div>
+      <div className="grid min-h-screen place-items-center bg-cream">
+        <div className="spinner" />
       </div>
     );
   }
 
   if (status === 'notfound') {
     return (
-      <div className={storeStyles.page}>
-        <div className={storeStyles.centerState}>
-          <Gem size={36} strokeWidth={1} className={storeStyles.notFoundIcon} />
+      <div className="grid min-h-screen place-items-center bg-cream px-6 text-center">
+        <div className="flex flex-col items-center gap-4 text-ink-mid">
+          <Gem size={36} strokeWidth={1} className="text-gold-300" />
           <p>This piece is no longer available.</p>
-          <Link to={`/store/${storeSlug}`} className={styles.backLink}>← Back to store</Link>
+          <Link to={`/store/${storeSlug}`} className="btn-outline"><ChevronLeft size={16} /> Back to store</Link>
         </div>
       </div>
     );
@@ -62,8 +61,8 @@ export default function ProductDetail() {
 
   if (status === 'error') {
     return (
-      <div className={storeStyles.page}>
-        <div className={storeStyles.centerState}><p>Something went wrong. Please refresh.</p></div>
+      <div className="grid min-h-screen place-items-center bg-cream px-6 text-center">
+        <p className="text-ink-mid">Something went wrong. Please refresh.</p>
       </div>
     );
   }
@@ -71,24 +70,26 @@ export default function ProductDetail() {
   const storeName = store.store_name || 'Jewellery Store';
 
   return (
-    <div className={storeStyles.page}>
-      <header className={styles.miniHeader}>
-        <button className={styles.backBtn} onClick={() => navigate(`/store/${storeSlug}`)}>
-          <ChevronLeft size={18} /> Back
-        </button>
-        <Link to={`/store/${storeSlug}`} className={styles.miniBrand}>{storeName}</Link>
-        <span className={styles.miniSpacer} />
+    <div className="min-h-screen bg-cream">
+      <header className="sticky top-0 z-40 border-b border-line bg-cream/90 backdrop-blur-md">
+        <div className="gold-rule" />
+        <div className="mx-auto flex max-w-[1280px] items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <button
+            className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium text-ink-mid transition hover:bg-sand hover:text-ink"
+            onClick={() => navigate(`/store/${storeSlug}`)}
+          >
+            <ChevronLeft size={18} /> Back
+          </button>
+          <Link to={`/store/${storeSlug}`} className="display mx-auto text-lg sm:text-xl">{storeName}</Link>
+          <span className="w-[68px]" />
+        </div>
       </header>
 
-      <main className={styles.detail}>
-        <ProductView product={product} ownerId={store.owner_id} customerName="Website Visitor" />
+      <main className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <ProductView product={product} ownerId={store.owner_id} store={store} customerName="Website Visitor" />
       </main>
 
-      <footer className={storeStyles.storeFooter}>
-        <span>{storeName}</span>
-        <span className={storeStyles.footerDot}>·</span>
-        <span>Powered by Swarnix</span>
-      </footer>
+      <StoreFooter store={store} storeName={storeName} onOpenOffers={() => navigate(`/store/${storeSlug}`)} />
     </div>
   );
 }
