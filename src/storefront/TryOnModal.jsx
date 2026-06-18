@@ -388,7 +388,7 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-ink/50 p-3 backdrop-blur-sm sm:p-6 animate-fadeIn"
+      className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-noir-900/72 p-3 backdrop-blur-md sm:p-6 animate-fadeIn"
       onClick={phase === 'loading' || phase === 'checking' ? undefined : onClose}
       role="dialog"
       aria-modal="true"

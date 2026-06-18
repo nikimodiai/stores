@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { CATEGORIES } from '../lib/config';
 import { productImages } from '../lib/storefront';
+import Reveal from './Reveal';
 
 const LABELS = Object.fromEntries(CATEGORIES.map(c => [c.value, c.label]));
 const labelFor = (cat) => LABELS[cat] || cat;
@@ -50,33 +51,40 @@ export default function CategoryRail({ products = [], categories = [], active, o
   if (categories.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-[1280px] px-4 pt-12 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-end justify-between gap-4">
+    <section className="mx-auto max-w-[1280px] px-4 pt-16 sm:px-6 lg:px-8">
+      <div className="mb-7 flex items-end justify-between gap-4">
         <div>
-          <p className="kicker mb-1.5">Browse</p>
-          <h2 className="display text-2xl sm:text-[28px]">Shop by Category</h2>
+          <p className="kicker mb-2">Browse</p>
+          <h2 className="editorial text-[clamp(1.7rem,3.4vw,2.4rem)]">Shop by Category</h2>
         </div>
-        <span className="hidden text-[13px] text-ink-mid sm:inline">Find exactly what you love</span>
+        <span className="hidden text-[13px] uppercase tracking-luxe text-ink-soft sm:inline">Find exactly what you love</span>
       </div>
 
-      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-6">
+      <Reveal
+        stagger
+        gap={0.05}
+        className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-6"
+      >
         {categories.map(cat => {
           const Icon = iconFor(cat);
           const cover = covers[cat];
           const isActive = active === cat;
           return (
-            <button
+            <Reveal
+              as="button"
+              item
               key={cat}
               onClick={() => onSelect(cat)}
-              className={`group flex w-[120px] shrink-0 flex-col items-center gap-2.5 rounded-2xl border p-3 text-center transition sm:w-auto ${
+              data-magnetic
+              className={`group flex w-[120px] shrink-0 flex-col items-center gap-2.5 rounded-2xl border p-3 text-center transition duration-300 sm:w-auto ${
                 isActive
                   ? 'border-gold-300 bg-gold-50 shadow-card'
-                  : 'border-line bg-white hover:border-gold-200 hover:shadow-card'
+                  : 'border-line bg-white hover:-translate-y-1 hover:border-gold-200 hover:shadow-card'
               }`}
             >
-              <span className="relative h-16 w-16 overflow-hidden rounded-full ring-1 ring-gold-200/60 sm:h-[72px] sm:w-[72px]">
+              <span className="relative h-16 w-16 overflow-hidden rounded-full ring-1 ring-gold-200/60 transition group-hover:ring-gold-400/70 sm:h-[72px] sm:w-[72px]">
                 {cover ? (
-                  <img src={cover} alt="" className="h-full w-full object-cover object-top transition group-hover:scale-110" draggable={false} />
+                  <img src={cover} alt="" className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-110" draggable={false} />
                 ) : (
                   <span className="grid h-full w-full place-items-center bg-hero-warm text-gold-600">
                     <Icon size={26} strokeWidth={1.5} />
@@ -87,10 +95,10 @@ export default function CategoryRail({ products = [], categories = [], active, o
               {counts[cat] ? (
                 <span className="text-[11px] text-ink-mid">{counts[cat]} piece{counts[cat] > 1 ? 's' : ''}</span>
               ) : null}
-            </button>
+            </Reveal>
           );
         })}
-      </div>
+      </Reveal>
 
       {active && (
         <button

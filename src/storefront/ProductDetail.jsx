@@ -4,6 +4,7 @@ import { ChevronLeft, Gem } from 'lucide-react';
 import { getStoreBySlug, getStorefrontProduct } from '../lib/storefront';
 import ProductView from './ProductView';
 import StoreFooter from './StoreFooter';
+import LuxeCursor from './LuxeCursor';
 
 // ── Product detail page (route) ─────────────────────────────────────
 // Route: /store/:storeSlug/product/:productId — used for deep links and
@@ -71,6 +72,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-cream">
+      <LuxeCursor />
       <header className="sticky top-0 z-40 border-b border-line bg-cream/90 backdrop-blur-md">
         <div className="gold-rule" />
         <div className="mx-auto flex max-w-[1280px] items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">

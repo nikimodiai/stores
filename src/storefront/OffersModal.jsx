@@ -47,7 +47,7 @@ export default function OffersModal({ open, offers = [], storeName, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-ink/45 p-3 backdrop-blur-sm sm:p-6 animate-fadeIn"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-noir-900/70 p-3 backdrop-blur-md sm:p-6 animate-fadeIn"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

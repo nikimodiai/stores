@@ -1,8 +1,8 @@
 /* ── Swarnix storefront — Tailwind base ──────────────────────────────
    Fonts + Tailwind layers. Bespoke tokens live in tailwind.config.js.
    A small @layer components holds the few patterns that repeat enough
-   to deserve a name (premium buttons, gold rule, spinner). */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
+   to deserve a name (premium buttons, gold rule, spinner, cursor). */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -32,11 +32,25 @@
     }
     *::-webkit-scrollbar-thumb:hover { background: #d9be7f; background-clip: padding-box; }
   }
+
+  /* Honour reduced-motion everywhere: kill long/looping animations and
+     scroll-smoothing. Framer Motion is additionally told via MotionConfig
+     reducedMotion="user", and the custom cursor unmounts itself. */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
 }
 
 @layer components {
   /* Thin luxe gold rule, used atop the header and as section dividers */
   .gold-rule { @apply h-[3px] w-full bg-gold-rule; }
+  /* Hairline gold divider for editorial section heads */
+  .gold-hair { @apply h-px w-full bg-gradient-to-r from-transparent via-gold-400/60 to-transparent; }
 
   /* Primary gold button — the main storefront CTA.
      max-w-full keeps a full-width button from ever spilling past its
@@ -55,13 +69,27 @@
            text-gold-700 transition-all duration-200
            hover:border-gold-500 hover:bg-white hover:-translate-y-0.5;
   }
+  /* Ghost button for use on the dark cinematic frame (hero/footer) */
+  .btn-ghost-light {
+    @apply inline-flex max-w-full items-center justify-center gap-2 rounded-full
+           border border-champagne-300/40 bg-white/5 px-6 py-3 font-sans text-sm font-semibold
+           text-champagne-100 backdrop-blur-sm transition-all duration-200
+           hover:border-champagne-300/80 hover:bg-white/10 hover:-translate-y-0.5;
+  }
   /* Section eyebrow / kicker */
   .kicker {
     @apply text-[11px] font-bold uppercase tracking-luxe text-gold-700;
   }
-  /* Serif display heading */
+  .kicker-light {
+    @apply text-[11px] font-bold uppercase tracking-luxe text-champagne-300;
+  }
+  /* Serif display heading (Playfair) */
   .display {
     @apply font-serif font-bold text-ink;
+  }
+  /* Oversized editorial heading (Cormorant) */
+  .editorial {
+    @apply font-display font-semibold leading-[1.04] tracking-tight text-ink;
   }
 
   /* Shared loading spinner */
@@ -83,3 +111,57 @@
 /* Hide number-input spinners, smooth momentum scroll on mobile rails */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Custom luxe cursor ──────────────────────────────────────────────
+   Only active on fine pointers (real mouse). LuxeCursor.jsx adds the
+   `.luxe-cursor-on` class to <html> when it mounts; we hide the native
+   cursor on interactive elements only while it's active so touch users
+   and reduced-motion users keep the system cursor. */
+@media (pointer: fine) {
+  .luxe-cursor-on,
+  .luxe-cursor-on a,
+  .luxe-cursor-on button,
+  .luxe-cursor-on [role='button'],
+  .luxe-cursor-on input,
+  .luxe-cursor-on textarea,
+  .luxe-cursor-on select,
+  .luxe-cursor-on label {
+    cursor: none;
+  }
+}
+.luxe-cursor {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  will-change: transform;
+}
+.luxe-cursor__ring {
+  position: absolute;
+  top: 0; left: 0;
+  height: 34px; width: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(220, 201, 163, 0.85);
+  box-shadow: 0 0 12px -2px rgba(200, 149, 42, 0.5);
+  transition: height .22s cubic-bezier(.22,.61,.36,1),
+              width .22s cubic-bezier(.22,.61,.36,1),
+              margin .22s cubic-bezier(.22,.61,.36,1),
+              border-color .22s ease, opacity .22s ease, background-color .22s ease;
+}
+.luxe-cursor__dot {
+  position: absolute;
+  top: 0; left: 0;
+  height: 5px; width: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 9999px;
+  background: #c8952a;
+  transition: opacity .2s ease;
+}
+.luxe-cursor.is-hover .luxe-cursor__ring {
+  height: 54px; width: 54px; margin: -27px 0 0 -27px;
+  border-color: rgba(200, 149, 42, 0.9);
+  background: rgba(220, 201, 163, 0.08);
+}
+.luxe-cursor.is-hover .luxe-cursor__dot { opacity: 0; }
+.luxe-cursor.is-down .luxe-cursor__ring { height: 26px; width: 26px; margin: -13px 0 0 -13px; }

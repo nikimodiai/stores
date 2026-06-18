@@ -279,6 +279,66 @@ export async function getStorefrontOffers(ownerId) {
   return (data ?? []).filter(o => !o.valid_to || o.valid_to >= todayStr);
 }
 
+/**
+ * Fetch a store's APPROVED customer reviews, scoped to its owner_id.
+ * Mirrors getStorefrontOffers: anon read is allowed only for approved
+ * rows (status = 'approved'; see supabase/2026_06_17_reviews_public_read.sql).
+ * Returns [] on any error or when the table/policy isn't present yet, so the
+ * storefront simply renders no review slider instead of breaking.
+ */
+export async function getStorefrontReviews(ownerId) {
+  if (!ownerId) return [];
+
+  const { data, error } = await db
+    .from('reviews')
+    .select('id, owner_id, customer_name, rating, body, avatar_url, created_at')
+    .eq('owner_id', ownerId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(24);
+
+  if (error) {
+    // Missing table / no policy yet → degrade silently to "no reviews".
+    console.warn('Reviews unavailable:', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
+ * Submit a CUSTOMER review for a store. Inserts as status = 'pending' — the
+ * RLS INSERT policy (2026_06_17_reviews_public_read.sql) forbids the public
+ * from setting any other status — so the jeweller moderates (approve/reject)
+ * before it appears on the storefront. Returns { ok } / { ok:false, error }.
+ */
+export async function submitReview({ ownerId, customerName, rating, body }) {
+  if (!ownerId) return { ok: false, error: 'Store not identified.' };
+  const name = String(customerName || '').trim();
+  const text = String(body || '').trim();
+  const r = Number(rating);
+  if (!name) return { ok: false, error: 'Please enter your name.' };
+  if (!(r >= 1 && r <= 5)) return { ok: false, error: 'Please choose a star rating.' };
+  if (!text) return { ok: false, error: 'Please write a short review.' };
+
+  const { error } = await db.from('reviews').insert({
+    owner_id: ownerId,
+    customer_name: name.slice(0, 80),
+    rating: r,
+    body: text.slice(0, 2000),
+    status: 'pending', // awaiting the jeweller's approval
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      error: /row-level security|permission|denied/i.test(error.message || '')
+        ? 'Reviews are not enabled for this store yet.'
+        : (error.message || 'Could not submit your review. Please try again.'),
+    };
+  }
+  return { ok: true };
+}
+
 // ── Virtual Try-On ──────────────────────────────────────────────────
 // Web entry point for the WhatsApp try-on workflow. The website POSTs the
 // customer's selfie (base64) + the product to an n8n Webhook node, which

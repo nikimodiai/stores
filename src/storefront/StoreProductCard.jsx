@@ -120,12 +120,16 @@ export default function StoreProductCard({ product: p, viewMode = 'grid', onOpen
     <button
       type="button"
       onClick={open}
-      className="group flex w-full flex-col overflow-hidden rounded-2xl border border-line bg-white text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1.5 hover:border-gold-200 hover:shadow-cardHov"
+      className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-line bg-white text-left transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1.5 hover:border-gold-300 hover:shadow-cardHov"
     >
       <div className="relative aspect-square w-full overflow-hidden bg-sand">
         <Slideshow urls={urls} name={p.name} showDots />
-        {/* subtle sheen on hover */}
-        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 transition group-hover:opacity-100" />
+        {/* subtle darkening for caption legibility on hover */}
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
+        {/* gold sheen sweep on hover */}
+        <span className="pointer-events-none absolute inset-0 overflow-hidden">
+          <span className="absolute -inset-y-4 left-0 w-1/3 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/25 to-transparent group-hover:animate-sheenSweep" />
+        </span>
       </div>
       <div className="flex flex-1 flex-col px-3.5 pb-4 pt-3.5">
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{p.name}</h3>

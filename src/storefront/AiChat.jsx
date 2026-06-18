@@ -635,9 +635,10 @@ export default function AiChat({ store, onAiResults, onClearAiFilter }) {
           </span>
         )}
         <button
-          className="grid h-14 w-14 place-items-center rounded-full bg-gold-sheen text-white shadow-[0_8px_24px_-4px_rgba(184,134,11,.55)] transition hover:scale-105 active:scale-95"
+          className="grid h-14 w-14 place-items-center rounded-full bg-gold-sheen text-white shadow-[0_8px_24px_-4px_rgba(184,134,11,.55)] ring-1 ring-gold-200/40 transition hover:scale-105 hover:shadow-glow active:scale-95"
           onClick={() => setOpen(o => !o)}
           aria-label={open ? 'Close chat' : 'Open AI chat'}
+          data-magnetic
         >
           {open ? <X size={24} /> : <Sparkles size={24} />}
         </button>

@@ -5,6 +5,7 @@ import {
   getStoreBySlug,
   getStorefrontProducts,
   getStorefrontOffers,
+  getStorefrontReviews,
   deriveCategories,
   deriveSubCategories,
   deriveSubCategoryMap,
@@ -13,6 +14,7 @@ import {
   matchesSearch,
   sortProducts,
   latestProducts,
+  productImages,
 } from '../lib/storefront';
 
 // How many catalogue cards to reveal per "page" (infinite scroll).
@@ -24,9 +26,14 @@ import StoreNotFound from './StoreNotFound';
 import StoreHero from './StoreHero';
 import StoreFooter from './StoreFooter';
 import CategoryRail from './CategoryRail';
+import QuickLinks from './QuickLinks';
+import FeaturedBand from './FeaturedBand';
+import TrustSection from './TrustSection';
 import OffersModal from './OffersModal';
 import ProductModal from './ProductModal';
 import AiChat from './AiChat';
+import LuxeCursor from './LuxeCursor';
+import Reveal from './Reveal';
 
 // Canonical ordering so the nav reads like the admin app (Rings, Earrings…)
 const CAT_ORDER = CATEGORIES.map(c => c.value);
@@ -40,12 +47,12 @@ const orderCategories = (cats) =>
 // Reusable section heading (kicker + serif title + optional sub).
 function SectionHead({ kicker, title, sub }) {
   return (
-    <div className="mb-7 flex items-end justify-between gap-4 flex-wrap">
+    <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
       <div>
-        {kicker && <p className="kicker mb-1.5">{kicker}</p>}
-        <h2 className="display text-2xl sm:text-[28px] lg:text-[32px]">{title}</h2>
+        {kicker && <p className="kicker mb-2">{kicker}</p>}
+        <h2 className="editorial text-[clamp(1.7rem,3.6vw,2.5rem)]">{title}</h2>
       </div>
-      {sub && <p className="text-[13.5px] text-ink-mid">{sub}</p>}
+      {sub && <p className="text-[12.5px] uppercase tracking-luxe text-ink-soft">{sub}</p>}
     </div>
   );
 }
@@ -63,6 +70,7 @@ export default function Storefront() {
   const [store, setStoreRow] = useState(null);
   const [products, setProducts] = useState([]);
   const [offers, setOffers] = useState([]);
+  const [reviews, setReviews] = useState([]);
 
   // Toolbar state
   const [active, setActive] = useState(null);     // selected category, null = All
@@ -79,10 +87,24 @@ export default function Storefront() {
   const [aiFilteredIds, setAiFilteredIds] = useState(null);
   const [aiLabel, setAiLabel] = useState(''); // the query that triggered it
   const catalogueRef = useRef(null);
+  const latestRef = useRef(null);        // "Latest Arrivals" section (New Arrivals shortcut)
   const sentinelRef = useRef(null); // infinite-scroll trigger element
 
   const scrollToCatalogue = useCallback(() => {
     catalogueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // "New Arrivals" quick link → scroll to Latest Arrivals (or catalogue).
+  const scrollToLatest = useCallback(() => {
+    (latestRef.current || catalogueRef.current)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // A quick-link "type" search (Gold/Diamond/Bridal): set search + jump to grid.
+  const searchAndScroll = useCallback((q) => {
+    setActive(null);
+    setSubActive(null);
+    setSearch(q);
+    setTimeout(() => catalogueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   }, []);
 
   // Selecting a category always resets the sub-category back to "All".
@@ -145,13 +167,15 @@ export default function Storefront() {
           return;
         }
         setStoreRow(row);
-        const [prods, activeOffers] = await Promise.all([
+        const [prods, activeOffers, publishedReviews] = await Promise.all([
           getStorefrontProducts(row.owner_id),
           getStorefrontOffers(row.owner_id),
+          getStorefrontReviews(row.owner_id),
         ]);
         if (cancelled) return;
         setProducts(prods);
         setOffers(activeOffers);
+        setReviews(publishedReviews);
         setStatus('ready');
       } catch (e) {
         if (!cancelled) setStatus('error');
@@ -167,6 +191,12 @@ export default function Storefront() {
   );
   const metals = useMemo(() => deriveMetals(products), [products]);
   const latest = useMemo(() => latestProducts(products, 8), [products]);
+  // A single hero-grade piece for the asymmetrical editorial band — prefer
+  // one with an image so the composition never renders an empty frame.
+  const featuredPiece = useMemo(
+    () => latest.find(p => productImages(p).length > 0) || null,
+    [latest],
+  );
   // category → [sub-categories] for the header's hover mega-menu.
   const subCategoryMap = useMemo(() => deriveSubCategoryMap(products), [products]);
   // Sub-categories within the active category (empty when no category picked).
@@ -253,6 +283,7 @@ export default function Storefront() {
 
   return (
     <div className="min-h-screen bg-cream">
+      <LuxeCursor />
       <StoreHeader
         store={store}
         storeName={storeName}
@@ -273,6 +304,9 @@ export default function Storefront() {
         onViewMode={setViewMode}
         resultCount={visible.length}
         onOpenOffers={() => setOffersOpen(true)}
+        products={products}
+        overHero={isHome}
+        onOpenProduct={setSelectedProduct}
       />
 
       <OffersModal
@@ -291,16 +325,33 @@ export default function Storefront() {
         onClose={() => setSelectedProduct(null)}
       />
 
-      {/* ── Hero — only on the unfiltered home view ── */}
+      {/* ── Hero — only on the unfiltered home view ──
+          Pulled up under the sticky header (header heights ≈ 116px mobile /
+          156px desktop) so the transparent header overlays the cinematic
+          hero rather than sitting on cream above it. */}
       {isHome && (
-        <StoreHero
-          storeName={storeName}
-          products={latest}
-          offers={offers}
-          productCount={products.length}
-          onExplore={scrollToCatalogue}
-          onOpenOffers={() => setOffersOpen(true)}
-          onTryOn={(p) => setSelectedProduct(p || latest[0] || null)}
+        <div className="-mt-[120px] lg:-mt-[160px]">
+          <StoreHero
+            storeName={storeName}
+            products={latest}
+            offers={offers}
+            productCount={products.length}
+            onExplore={scrollToCatalogue}
+            onOpenOffers={() => setOffersOpen(true)}
+            onTryOn={(p) => setSelectedProduct(p || latest[0] || null)}
+          />
+        </div>
+      )}
+
+      {/* ── Quick links rail ── */}
+      {isHome && (
+        <QuickLinks
+          categories={categories}
+          active={active}
+          onSelectCategory={(cat) => { selectCategory(cat); scrollToCatalogue(); }}
+          onSearch={searchAndScroll}
+          onScrollLatest={scrollToLatest}
+          hasLatest={latest.length > 0}
         />
       )}
 
@@ -314,16 +365,28 @@ export default function Storefront() {
         />
       )}
 
+      {/* ── Featured / Signature editorial band ── */}
+      {isHome && featuredPiece && (
+        <FeaturedBand product={featuredPiece} onOpen={setSelectedProduct} />
+      )}
+
       {/* ── Latest Arrivals ── */}
       {isHome && latest.length > 0 && (
-        <section className="mx-auto mt-12 max-w-[1280px] rounded-3xl border border-gold-100 bg-cream-fade px-4 py-10 sm:px-6 lg:px-8">
+        <section ref={latestRef} className="mx-auto mt-14 max-w-[1280px] scroll-mt-24 rounded-3xl border border-gold-100 bg-cream-fade px-4 py-12 sm:px-6 lg:px-8">
           <SectionHead kicker="Just In" title="Latest Arrivals" sub="Our freshest pieces, hand-picked for you" />
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          <Reveal stagger className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {latest.map(p => (
-              <StoreProductCard key={p.id} product={p} viewMode="grid" onOpen={setSelectedProduct} />
+              <Reveal item key={p.id}>
+                <StoreProductCard product={p} viewMode="grid" onOpen={setSelectedProduct} />
+              </Reveal>
             ))}
-          </div>
+          </Reveal>
         </section>
+      )}
+
+      {/* ── Craftsmanship & reviews ── */}
+      {isHome && (
+        <TrustSection store={store} storeName={storeName} reviews={reviews} />
       )}
 
       <main ref={catalogueRef} className="mx-auto max-w-[1280px] scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8">
@@ -417,7 +480,10 @@ export default function Storefront() {
           </div>
         ) : (
           <>
-            <div
+            <Reveal
+              stagger
+              gap={0.04}
+              key={viewMode}
               className={
                 viewMode === 'list'
                   ? 'flex flex-col gap-3'
@@ -425,11 +491,11 @@ export default function Storefront() {
               }
             >
               {shown.map(p => (
-                <div key={p.id} className={isAiFiltered ? 'rounded-2xl ring-2 ring-gold-300/50' : ''}>
+                <Reveal item key={p.id} className={isAiFiltered ? 'rounded-2xl ring-2 ring-gold-300/50' : ''}>
                   <StoreProductCard product={p} viewMode={viewMode} onOpen={setSelectedProduct} />
-                </div>
+                </Reveal>
               ))}
-            </div>
+            </Reveal>
 
             {/* Infinite-scroll sentinel + manual fallback */}
             {hasMore && (
