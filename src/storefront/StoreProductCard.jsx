@@ -1,6 +1,50 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Gem, Sparkles } from 'lucide-react';
 import { productImages } from '../lib/storefront';
+import { VARIANT_COLORS } from '../lib/config';
+
+function colorHex(colorName) {
+  return VARIANT_COLORS.find(c => c.value === colorName)?.hex ?? null;
+}
+
+// Small dot-row of the distinct colors this product is available in, plus
+// a "N variants" pill when there's more than one. Self-contained — only
+// needs variants as an array of { color }.
+function ColorSwatches({ variants }) {
+  if (!variants?.length) return null;
+  const seen = new Set();
+  const unique = variants.filter(v => {
+    if (seen.has(v.color)) return false;
+    seen.add(v.color);
+    return true;
+  });
+  if (unique.length === 0) return null;
+
+  return (
+    <div className="mt-1.5 flex items-center gap-1.5">
+      {unique.slice(0, 6).map((v, i) => {
+        const hex = colorHex(v.color);
+        return hex ? (
+          <span
+            key={i}
+            className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-sm"
+            style={{ background: hex }}
+            title={v.color}
+          />
+        ) : (
+          <span
+            key={i}
+            className="h-3.5 w-3.5 rounded-full border border-black/10 bg-gradient-to-br from-gold-300 via-stone-200 to-gold-500"
+            title={v.color || 'Two-Tone'}
+          />
+        );
+      })}
+      {variants.length > 1 && (
+        <span className="text-[10.5px] font-medium text-ink-mid">{variants.length} variants</span>
+      )}
+    </div>
+  );
+}
 
 // Auto-rotating image. If a product has multiple images, cross-dissolves
 // through them every 2.5s. All images are stacked absolutely and
@@ -77,7 +121,7 @@ function buildSpecs(p) {
 }
 
 // One product, rendered as a grid card or a list row depending on viewMode.
-export default function StoreProductCard({ product: p, viewMode = 'grid', onOpen }) {
+export default function StoreProductCard({ product: p, variants = [], viewMode = 'grid', onOpen }) {
   const urls = productImages(p);
   const open = () => onOpen?.(p);
 
@@ -108,6 +152,7 @@ export default function StoreProductCard({ product: p, viewMode = 'grid', onOpen
               ))}
             </div>
           )}
+          <ColorSwatches variants={variants} />
         </div>
         <div className="flex items-center whitespace-nowrap px-4 font-serif text-[15px] font-bold text-gold-700 sm:px-5">
           {priceStr}
@@ -144,6 +189,7 @@ export default function StoreProductCard({ product: p, viewMode = 'grid', onOpen
             ))}
           </dl>
         )}
+        <ColorSwatches variants={variants} />
         <div className="mt-3 flex items-center justify-between gap-2">
           <span className="font-serif text-[17px] font-bold tracking-tight text-ink">{priceStr}</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-2.5 py-1 text-[11px] font-semibold text-gold-700 opacity-0 transition group-hover:opacity-100">

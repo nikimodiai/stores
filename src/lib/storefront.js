@@ -91,6 +91,76 @@ export async function getStorefrontProducts(ownerId, category) {
 }
 
 /**
+ * Fetch the in-stock variants (color/carat options) for a set of products,
+ * grouped by product_id. Mirrors getStorefrontReviews: returns {} on any
+ * error or when the table/policy isn't present yet, so the storefront
+ * simply renders cards without swatches instead of breaking.
+ *
+ * @param {string[]} productIds
+ * @returns {Promise<Record<string, Array<{color: string, carat: string}>>>}
+ */
+export async function getStorefrontVariants(productIds) {
+  if (!productIds || productIds.length === 0) return {};
+
+  const { data, error } = await db
+    .from('product_variants')
+    .select('product_id, color, carat, is_in_stock')
+    .in('product_id', productIds)
+    .eq('is_in_stock', true);
+
+  if (error) {
+    console.warn('Variants unavailable:', error.message);
+    return {};
+  }
+
+  const map = {};
+  for (const v of data ?? []) {
+    (map[v.product_id] ??= []).push(v);
+  }
+  return map;
+}
+
+// Customer-relevant variant columns for the product detail view — excludes
+// pricing-engine internals (making_charge_*, wastage_percent,
+// hallmark_charge, stone_value_inr, sort_order, is_active) which are never
+// shown raw to a shopper, only reflected in the final `price`.
+const VARIANT_DETAIL_COLS = [
+  'id', 'product_id', 'carat', 'color',
+  'gold_purity', 'gold_weight_grams', 'silver_purity', 'silver_weight_grams',
+  'gross_weight', 'net_weight_grams',
+  'diamond_purity', 'diamond_color', 'diamond_weight',
+  'size', 'huid', 'price', 'fixed_price', 'dynamic_price', 'is_in_stock',
+  'images', 'primary_image_url',
+].join(', ');
+
+/**
+ * Fetch every in-stock, active variant for ONE product, in display order —
+ * used by the product detail view to power a variant picker (color/carat/
+ * size chips that swap price, weight and diamond specs). Returns [] on any
+ * error or when there are no variants, so the detail view simply falls
+ * back to the base product's own fields.
+ *
+ * @param {string} productId
+ */
+export async function getStorefrontProductVariants(productId) {
+  if (!productId) return [];
+
+  const { data, error } = await db
+    .from('product_variants')
+    .select(VARIANT_DETAIL_COLS)
+    .eq('product_id', productId)
+    .eq('is_in_stock', true)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.warn('Variant detail unavailable:', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
  * Fetch a single product by id, scoped to the store's owner_id so one store
  * can never deep-link into another store's catalogue. Returns the row or null.
  */

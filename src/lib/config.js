@@ -46,3 +46,14 @@ export const CATEGORIES = [
   { value: 'Set', label: 'Sets' },
   { value: 'Other', label: 'Other' },
 ];
+
+// ── Variant colors ──────────────────────────────────────────────────
+// Mirrors the admin app's VARIANT_COLORS (VariantEditor.jsx) so swatches
+// on the storefront match what the owner picks when adding a variant.
+export const VARIANT_COLORS = [
+  { value: 'Yellow Gold', label: 'Yellow Gold', hex: '#C9A84C' },
+  { value: 'Rose Gold',   label: 'Rose Gold',   hex: '#B76E79' },
+  { value: 'White Gold',  label: 'White Gold',  hex: '#D0D0D0' },
+  { value: 'Two-Tone',    label: 'Two-Tone',    hex: null },
+  { value: 'Silver',      label: 'Silver',      hex: '#A8A9AD' },
+];

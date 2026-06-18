@@ -157,37 +157,47 @@ export default function StoreHero({
           </m.div>
         </m.div>
 
-        {/* ── Zig-zag photo mosaic — contained, not full-bleed ── */}
+        {/* ── Photo mosaic — organic stagger, not a uniform grid. Each tile
+            gets its own size/offset/tilt so the row reads as "scattered"
+            rather than machined, while every photo stays fully visible
+            (offsets are gutter-only — never enough to overlap). */}
         {slides.length > 0 && (
           <m.div
             initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
-            className="relative mx-auto hidden h-[440px] w-full max-w-[440px] sm:block lg:h-[480px]"
-            aria-hidden="true"
+            className="mx-auto hidden w-full max-w-[480px] flex-col gap-5 sm:flex"
           >
-            {slides.slice(0, 5).map((s, i) => {
-              const TILE_LAYOUT = [
-                'left-0 top-6 h-[58%] w-[56%] z-20',
-                'right-0 top-0 h-[42%] w-[42%] z-10',
-                'right-2 top-[46%] h-[38%] w-[44%] z-10',
-                'left-[8%] bottom-0 h-[34%] w-[38%] z-30',
-                'right-[18%] bottom-2 h-[28%] w-[30%] z-0',
-              ];
-              return (
-                <div
-                  key={s.id}
-                  className={`absolute overflow-hidden rounded-2xl border border-champagne-300/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,.5)] ${TILE_LAYOUT[i]}`}
-                >
-                  <img
-                    src={s.img}
-                    alt=""
-                    draggable={false}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              );
-            })}
+            <div className="flex items-start gap-4">
+              {slides.slice(0, 3).map((s, i) => {
+                const TILT = ['-rotate-2 -translate-y-2', 'rotate-1 translate-y-3', 'rotate-2 -translate-y-1'];
+                const SIZE = ['w-[34%]', 'w-[38%]', 'w-[28%]'];
+                return (
+                  <div
+                    key={s.id}
+                    className={`aspect-square shrink-0 overflow-hidden rounded-2xl border border-champagne-300/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,.5)] ${SIZE[i]} ${TILT[i]}`}
+                  >
+                    <img src={s.img} alt="" draggable={false} className="h-full w-full object-cover" />
+                  </div>
+                );
+              })}
+            </div>
+            {slides.length > 3 && (
+              <div className="flex items-start gap-5 pl-[8%]">
+                {slides.slice(3, 5).map((s, i) => {
+                  const TILT = ['rotate-1 translate-y-1', '-rotate-1 -translate-y-2'];
+                  const SIZE = ['w-[30%]', 'w-[40%]'];
+                  return (
+                    <div
+                      key={s.id}
+                      className={`aspect-square shrink-0 overflow-hidden rounded-2xl border border-champagne-300/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,.5)] ${SIZE[i]} ${TILT[i]}`}
+                    >
+                      <img src={s.img} alt="" draggable={false} className="h-full w-full object-cover" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </m.div>
         )}
       </m.div>

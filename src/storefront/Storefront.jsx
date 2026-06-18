@@ -6,6 +6,7 @@ import {
   getStorefrontProducts,
   getStorefrontOffers,
   getStorefrontReviews,
+  getStorefrontVariants,
   deriveCategories,
   deriveSubCategories,
   deriveSubCategoryMap,
@@ -71,6 +72,7 @@ export default function Storefront() {
   const [products, setProducts] = useState([]);
   const [offers, setOffers] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [variantMap, setVariantMap] = useState({}); // product.id -> [{color, carat}]
 
   // Toolbar state
   const [active, setActive] = useState(null);     // selected category, null = All
@@ -91,9 +93,19 @@ export default function Storefront() {
   const reviewsRef = useRef(null);       // Trust/reviews section (header rating shortcut)
   const sentinelRef = useRef(null); // infinite-scroll trigger element
 
-  const scrollToCatalogue = useCallback(() => {
-    catalogueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Scrolls so the element's top lands just under the sticky header,
+  // using the header's actual rendered height (varies mobile/desktop and
+  // transparent/solid) instead of a guessed fixed offset.
+  const scrollToEl = useCallback((el) => {
+    if (!el) return;
+    const headerH = document.getElementById('store-header')?.offsetHeight || 0;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerH - 12;
+    window.scrollTo({ top, behavior: 'smooth' });
   }, []);
+
+  const scrollToCatalogue = useCallback(() => {
+    scrollToEl(catalogueRef.current);
+  }, [scrollToEl]);
 
   // Reviews only render on the unfiltered home view — clear any active
   // filter first so the section is guaranteed to be mounted to scroll to.
@@ -103,21 +115,21 @@ export default function Storefront() {
     setSearch('');
     setMetalFilter('');
     setAiFilteredIds(null);
-    setTimeout(() => reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-  }, []);
+    setTimeout(() => scrollToEl(reviewsRef.current), 80);
+  }, [scrollToEl]);
 
   // "New Arrivals" quick link → scroll to Latest Arrivals (or catalogue).
   const scrollToLatest = useCallback(() => {
-    (latestRef.current || catalogueRef.current)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
+    scrollToEl(latestRef.current || catalogueRef.current);
+  }, [scrollToEl]);
 
   // A quick-link "type" search (Gold/Diamond/Bridal): set search + jump to grid.
   const searchAndScroll = useCallback((q) => {
     setActive(null);
     setSubActive(null);
     setSearch(q);
-    setTimeout(() => catalogueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-  }, []);
+    setTimeout(() => scrollToEl(catalogueRef.current), 80);
+  }, [scrollToEl]);
 
   // Selecting a category always resets the sub-category back to "All".
   const selectCategory = useCallback((cat) => {
@@ -150,12 +162,12 @@ export default function Storefront() {
     if (matched.size > 0) {
       setAiFilteredIds(matched);
       if (queryLabel) setAiLabel(queryLabel);
-      setTimeout(() => catalogueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      setTimeout(() => scrollToEl(catalogueRef.current), 150);
     } else {
       setAiFilteredIds(null);
     }
     return matched.size;
-  }, [products]);
+  }, [products, scrollToEl]);
 
   const clearAiFilter = useCallback(() => {
     setAiFilteredIds(null);
@@ -189,6 +201,11 @@ export default function Storefront() {
         setOffers(activeOffers);
         setReviews(publishedReviews);
         setStatus('ready');
+
+        // Variants are secondary (swatches only) — fetch after the main
+        // catalogue so they never delay first paint of the store.
+        const variants = await getStorefrontVariants(prods.map(p => p.id));
+        if (!cancelled) setVariantMap(variants);
       } catch (e) {
         if (!cancelled) setStatus('error');
       }
@@ -391,7 +408,7 @@ export default function Storefront() {
           <Reveal stagger className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {latest.map(p => (
               <Reveal item key={p.id}>
-                <StoreProductCard product={p} viewMode="grid" onOpen={setSelectedProduct} />
+                <StoreProductCard product={p} variants={variantMap[p.id]} viewMode="grid" onOpen={setSelectedProduct} />
               </Reveal>
             ))}
           </Reveal>
@@ -400,9 +417,7 @@ export default function Storefront() {
 
       {/* ── Craftsmanship & reviews ── */}
       {isHome && (
-        <div ref={reviewsRef} className="scroll-mt-24">
-          <TrustSection store={store} storeName={storeName} reviews={reviews} />
-        </div>
+        <TrustSection store={store} storeName={storeName} reviews={reviews} reviewsAnchorRef={reviewsRef} />
       )}
 
       <main ref={catalogueRef} className="mx-auto max-w-[1280px] scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8">
@@ -508,7 +523,7 @@ export default function Storefront() {
             >
               {shown.map(p => (
                 <Reveal item key={p.id} className={isAiFiltered ? 'rounded-2xl ring-2 ring-gold-300/50' : ''}>
-                  <StoreProductCard product={p} viewMode={viewMode} onOpen={setSelectedProduct} />
+                  <StoreProductCard product={p} variants={variantMap[p.id]} viewMode={viewMode} onOpen={setSelectedProduct} />
                 </Reveal>
               ))}
             </Reveal>

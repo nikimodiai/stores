@@ -14,8 +14,11 @@
   /* Guard against horizontal overflow on mobile: stray absolute/translate
      elements or wide children can push the page wider than the viewport,
      which makes fixed-width content (modals, CTAs) appear to spill off the
-     right edge. Clamp the page to the viewport width. */
-  html, body { max-width: 100%; overflow-x: hidden; }
+     right edge. `clip` (not `hidden`) clamps the axis without creating an
+     independent scroll container — `overflow-x: hidden` forces `overflow-y`
+     to compute as `auto`, which turns body into its own scroller and
+     silently breaks `window.scrollTo` / `scrollIntoView` everywhere. */
+  html, body { max-width: 100%; overflow-x: clip; }
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     @apply bg-cream text-ink font-sans antialiased;

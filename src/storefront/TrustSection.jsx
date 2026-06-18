@@ -141,7 +141,7 @@ function ReviewSlider({ reviews }) {
 // ── Trust section ────────────────────────────────────────────────────
 // Always renders the craftsmanship/assurance pillars. Renders the review
 // slider ONLY when the store has real published reviews — never fabricated.
-export default function TrustSection({ store, storeName, reviews = [] }) {
+export default function TrustSection({ store, storeName, reviews = [], reviewsAnchorRef }) {
   const [formOpen, setFormOpen] = useState(false);
   const hasReviews = reviews.length > 0;
 
@@ -169,18 +169,22 @@ export default function TrustSection({ store, storeName, reviews = [] }) {
         ))}
       </Reveal>
 
-      {hasReviews && <ReviewSlider reviews={reviews} />}
+      {/* Anchor for the header's star-rating shortcut — lands here, at the
+          actual reviews, rather than the top of the pillars above. */}
+      <div ref={reviewsAnchorRef} className="scroll-mt-24">
+        {hasReviews && <ReviewSlider reviews={reviews} />}
 
-      {/* Write-a-review CTA — always available so customers can share their
-          experience; submissions are verified by the store before showing. */}
-      <Reveal className="mt-10 flex flex-col items-center gap-3 text-center">
-        <p className="text-sm text-ink-mid">
-          {hasReviews ? 'Bought from us before?' : `Be the first to review ${storeName}.`}
-        </p>
-        <button onClick={() => setFormOpen(true)} className="btn-outline" data-magnetic>
-          <PenLine size={16} /> Write a review
-        </button>
-      </Reveal>
+        {/* Write-a-review CTA — always available so customers can share their
+            experience; submissions are verified by the store before showing. */}
+        <Reveal className="mt-10 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-ink-mid">
+            {hasReviews ? 'Bought from us before?' : `Be the first to review ${storeName}.`}
+          </p>
+          <button onClick={() => setFormOpen(true)} className="btn-outline" data-magnetic>
+            <PenLine size={16} /> Write a review
+          </button>
+        </Reveal>
+      </div>
 
       <ReviewForm
         open={formOpen}

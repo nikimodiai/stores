@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   X, SlidersHorizontal, ArrowUpDown, LayoutGrid, List, Gem,
-  Menu, Tag, MapPin, Phone, Sparkles, Check, ChevronDown, ChevronRight, Star,
+  Menu, Tag, MapPin, Phone, Check, ChevronDown, ChevronRight, Star,
 } from 'lucide-react';
 import { CATEGORIES } from '../lib/config';
 import { SORT_OPTIONS } from '../lib/storefront';
@@ -110,6 +110,7 @@ export default function StoreHeader({
 
   return (
     <header
+      id="store-header"
       className={`sticky top-0 z-40 border-b transition-colors duration-500 ${
         solid
           ? 'border-line bg-cream/90 backdrop-blur-md shadow-[0_6px_20px_-16px_rgba(42,33,24,.35)]'
@@ -130,24 +131,24 @@ export default function StoreHeader({
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
 
-        <button
-          className="flex items-center gap-2.5 whitespace-nowrap"
-          onClick={() => pick(null)}
-          aria-label={`${storeName} — home`}
-          data-magnetic
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-gold-sheen text-white shadow-gold">
-            <Gem size={18} strokeWidth={1.75} />
-          </span>
-          <span className={`text-lg leading-none tracking-tight sm:text-xl lg:text-[22px] font-serif font-bold transition-colors duration-500 ${solid ? 'text-ink' : 'text-champagne-50'}`}>
-            {storeName}
-          </span>
+        <div className="flex items-center gap-2.5 whitespace-nowrap">
+          <button
+            className="flex items-center gap-2.5"
+            onClick={() => pick(null)}
+            aria-label={`${storeName} — home`}
+            data-magnetic
+          >
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-gold-sheen text-white shadow-gold">
+              <Gem size={18} strokeWidth={1.75} />
+            </span>
+            <span className={`text-lg leading-none tracking-tight sm:text-xl lg:text-[22px] font-serif font-bold transition-colors duration-500 ${solid ? 'text-ink' : 'text-champagne-50'}`}>
+              {storeName}
+            </span>
+          </button>
           {avgRating !== null && reviewCount > 0 && (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => { e.stopPropagation(); onOpenReviews?.(); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onOpenReviews?.(); } }}
+            <button
+              type="button"
+              onClick={() => { setHovered(null); onOpenReviews?.(); }}
               className="flex items-center gap-0.5 leading-none transition hover:opacity-80"
               aria-label={`${avgRating} out of 5, ${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'} — view reviews`}
             >
@@ -165,9 +166,9 @@ export default function StoreHeader({
               <span className={`text-[11px] font-medium ml-1 underline-offset-2 hover:underline ${solid ? 'text-ink-mid' : 'text-champagne-200/80'}`}>
                 ({reviewCount})
               </span>
-            </span>
+            </button>
           )}
-        </button>
+        </div>
 
         {/* Contact chips — desktop only, solid header only (over hero stays clean) */}
         {solid && (
@@ -193,9 +194,18 @@ export default function StoreHeader({
         {/* WhatsApp / enquire CTA */}
         <div className={solid ? 'ml-auto lg:ml-0' : 'ml-auto'}>
           {wa ? (
-            <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-gold px-4 py-2 text-[13px]" data-magnetic>
-              <Sparkles size={15} />
-              <span className="hidden sm:inline">Enquire</span>
+            <a
+              href={wa}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="grid h-10 w-10 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_4px_14px_-2px_rgba(37,211,102,.55)] transition hover:brightness-105"
+              aria-label="Chat on WhatsApp"
+              data-magnetic
+            >
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.149-.149.347-.347.521-.524.173-.174.231-.297.347-.495.116-.198.058-.372-.034-.521-.092-.149-.74-1.785-.94-2.197-.231-.479-.466-.479-.652-.479-.173 0-.372-.025-.571-.025-.198 0-.521.075-.793.372-.272.297-1.04 1.016-1.04 2.479s1.064 2.876 1.213 3.074c.149.198 2.05 3.124 4.972 4.255 2.922 1.131 2.922.756 3.467.706.545-.05 1.758-.706 2.005-1.388.247-.682.247-1.265.173-1.388-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.4 5.07L2 22l5.2-1.5a9.86 9.86 0 0 0 4.84 1.26h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.84 9.84 0 0 0 12.04 2zm0 18.13h-.01a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.09.89.89-3.01-.2-.31a8.22 8.22 0 0 1-1.27-4.37C3.88 7.4 7.55 3.73 12.05 3.73a8.18 8.18 0 0 1 5.82 2.4 8.18 8.18 0 0 1 2.41 5.78c0 4.5-3.67 8.22-8.18 8.22z"/>
+              </svg>
             </a>
           ) : (
             <button onClick={onOpenOffers} className="btn-gold px-4 py-2 text-[13px]" data-magnetic>
