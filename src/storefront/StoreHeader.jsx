@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   X, SlidersHorizontal, ArrowUpDown, LayoutGrid, List, Gem,
-  Menu, Tag, MapPin, Phone, Sparkles, Check, ChevronDown, ChevronRight,
+  Menu, Tag, MapPin, Phone, Sparkles, Check, ChevronDown, ChevronRight, Star,
 } from 'lucide-react';
 import { CATEGORIES } from '../lib/config';
 import { SORT_OPTIONS } from '../lib/storefront';
@@ -35,8 +35,10 @@ export default function StoreHeader({
   resultCount,
   onOpenOffers,
   products = [],
+  reviews = [],
   overHero = false,
   onOpenProduct,
+  onOpenReviews,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -91,6 +93,14 @@ export default function StoreHeader({
   const wa = waLink(store?.whatsapp_phone || store?.phone);
   const sortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Sort';
 
+  // Compute average rating from published reviews (only shown when data exists)
+  const { avgRating, reviewCount } = useMemo(() => {
+    const rated = reviews.filter(r => r.rating != null);
+    if (rated.length === 0) return { avgRating: null, reviewCount: reviews.length };
+    const avg = rated.reduce((sum, r) => sum + r.rating, 0) / rated.length;
+    return { avgRating: Math.round(avg * 10) / 10, reviewCount: reviews.length };
+  }, [reviews]);
+
   // ── Tone-aware class fragments ──
   const navIdle = solid ? 'text-ink-mid hover:bg-sand hover:text-ink' : 'text-champagne-100/80 hover:bg-white/10 hover:text-champagne-50';
   const navActive = solid ? 'bg-gold-100 text-gold-700' : 'bg-white/15 text-champagne-50';
@@ -121,7 +131,7 @@ export default function StoreHeader({
         </button>
 
         <button
-          className="flex items-center gap-2 whitespace-nowrap"
+          className="flex items-center gap-2.5 whitespace-nowrap"
           onClick={() => pick(null)}
           aria-label={`${storeName} — home`}
           data-magnetic
@@ -132,6 +142,31 @@ export default function StoreHeader({
           <span className={`text-lg leading-none tracking-tight sm:text-xl lg:text-[22px] font-serif font-bold transition-colors duration-500 ${solid ? 'text-ink' : 'text-champagne-50'}`}>
             {storeName}
           </span>
+          {avgRating !== null && reviewCount > 0 && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); onOpenReviews?.(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onOpenReviews?.(); } }}
+              className="flex items-center gap-0.5 leading-none transition hover:opacity-80"
+              aria-label={`${avgRating} out of 5, ${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'} — view reviews`}
+            >
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  size={11}
+                  className={
+                    i < Math.round(avgRating)
+                      ? 'fill-gold-500 text-gold-500'
+                      : solid ? 'fill-gold-200 text-gold-200' : 'fill-champagne-300/30 text-champagne-300/30'
+                  }
+                />
+              ))}
+              <span className={`text-[11px] font-medium ml-1 underline-offset-2 hover:underline ${solid ? 'text-ink-mid' : 'text-champagne-200/80'}`}>
+                ({reviewCount})
+              </span>
+            </span>
+          )}
         </button>
 
         {/* Contact chips — desktop only, solid header only (over hero stays clean) */}

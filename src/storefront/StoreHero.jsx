@@ -1,18 +1,14 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { m, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useMemo, useEffect, useRef, useCallback } from 'react';
+import { m, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ArrowRight, Tag, Camera, ChevronDown, Sparkles } from 'lucide-react';
 import { productImages } from '../lib/storefront';
 import { EASE } from '../lib/motion';
 
-// How long each hero slide holds before crossfading to the next.
-const SLIDE_MS = 6000;
-
 // ── Cinematic hero ───────────────────────────────────────────────────
-// Full-viewport DARK hero: a crossfading slider of catalogue imagery with
-// a slow Ken-Burns push, a legibility scrim, gold light-bloom, and micro
-// mouse-parallax. The brand statement sits in Cormorant display type with
-// magnetic CTAs. Degrades gracefully: few/no images → static treatment;
-// reduced-motion → no Ken-Burns / no parallax (handled by CSS + guards).
+// DARK hero with a contained zig-zag photo mosaic (not full-bleed) beside
+// the brand statement in Cormorant display type, gold light-bloom, and
+// micro mouse-parallax. Degrades gracefully: no images → copy-only;
+// reduced-motion → no parallax (handled by guards).
 export default function StoreHero({
   storeName,
   products = [],
@@ -39,14 +35,6 @@ export default function StoreHero({
 
   const hasOffers = offers.length > 0;
   const featured = slides[0]?.product || products[0] || null;
-  const [idx, setIdx] = useState(0);
-
-  // Advance the slider on a timer; pauses if there's only one slide.
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    const t = setInterval(() => setIdx(i => (i + 1) % slides.length), SLIDE_MS);
-    return () => clearInterval(t);
-  }, [slides.length]);
 
   // ── Micro-parallax (desktop, motion-allowed only) ──
   const mx = useMotionValue(0);
@@ -78,50 +66,18 @@ export default function StoreHero({
 
   return (
     <section
-      className="relative isolate flex min-h-[88svh] w-full items-end overflow-hidden bg-noir-900 text-champagne-50"
+      className="relative isolate flex min-h-[88svh] w-full items-center overflow-hidden bg-rosegold-900 bg-rosegold-deep text-champagne-50"
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
       aria-label={`${storeName} — featured`}
     >
-      {/* ── Slider layer ── */}
-      <m.div className="absolute inset-0 -z-10" style={{ x: imgX, y: imgY, scale: 1.06 }}>
-        {slides.length > 0 ? (
-          <AnimatePresence initial={false}>
-            <m.div
-              key={slides[idx].id + idx}
-              className="absolute inset-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.4, ease: EASE }}
-            >
-              <img
-                src={slides[idx].img}
-                alt=""
-                aria-hidden="true"
-                className="h-full w-full origin-center object-cover animate-kenburns"
-                draggable={false}
-              />
-            </m.div>
-          </AnimatePresence>
-        ) : (
-          <div className="absolute inset-0 bg-noir-deep" />
-        )}
-      </m.div>
-
-      {/* ── Legibility scrim + warm light-bloom ── */}
-      <div className="absolute inset-0 -z-10 bg-hero-scrim" aria-hidden="true" />
-      {/* Targeted scrim behind the headline (bottom-left) so the copy stays
-          legible while the rest of the photo reads bright and clear. */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-noir-900/85 via-noir-900/20 to-transparent" aria-hidden="true" />
+      {/* ── Ambient warm glow (no full-bleed photo, no heavy scrim) ── */}
       <div className="pointer-events-none absolute -right-40 -top-40 -z-10 h-[620px] w-[620px] rounded-full bg-gold-500/15 blur-[120px]" aria-hidden="true" />
-      <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-[420px] w-[420px] rounded-full bg-champagne-500/10 blur-[120px]" aria-hidden="true" />
-      {/* Fine grain / vignette via subtle ring at edges (light touch) */}
-      <div className="pointer-events-none absolute inset-0 -z-10 shadow-[inset_0_0_160px_40px_rgba(0,0,0,.35)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-[420px] w-[420px] rounded-full bg-rosegold-400/20 blur-[120px]" aria-hidden="true" />
 
-      {/* ── Copy ── */}
+      {/* ── Copy + mosaic, side by side ── */}
       <m.div
-        className="relative mx-auto w-full max-w-[1280px] px-5 pb-[13vh] pt-[150px] sm:px-6 lg:px-8 lg:pt-[170px]"
+        className="relative mx-auto grid w-full max-w-[1280px] grid-cols-1 items-center gap-10 px-5 pb-[7vh] pt-[150px] sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:pt-[170px] lg:pb-0"
         style={{ x: copyX, y: copyY }}
       >
         <m.div
@@ -200,23 +156,41 @@ export default function StoreHero({
             <span>Best Price Assured</span>
           </m.div>
         </m.div>
-      </m.div>
 
-      {/* ── Slide indicators ── */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-7 right-6 z-10 hidden items-center gap-2 sm:flex lg:right-8" aria-hidden="true">
-          {slides.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => setIdx(i)}
-              className={`h-[3px] rounded-full transition-all duration-500 ${
-                i === idx ? 'w-8 bg-gold-300' : 'w-4 bg-champagne-100/30 hover:bg-champagne-100/60'
-              }`}
-              aria-label={`Show slide ${i + 1}`}
-            />
-          ))}
-        </div>
-      )}
+        {/* ── Zig-zag photo mosaic — contained, not full-bleed ── */}
+        {slides.length > 0 && (
+          <m.div
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
+            className="relative mx-auto hidden h-[440px] w-full max-w-[440px] sm:block lg:h-[480px]"
+            aria-hidden="true"
+          >
+            {slides.slice(0, 5).map((s, i) => {
+              const TILE_LAYOUT = [
+                'left-0 top-6 h-[58%] w-[56%] z-20',
+                'right-0 top-0 h-[42%] w-[42%] z-10',
+                'right-2 top-[46%] h-[38%] w-[44%] z-10',
+                'left-[8%] bottom-0 h-[34%] w-[38%] z-30',
+                'right-[18%] bottom-2 h-[28%] w-[30%] z-0',
+              ];
+              return (
+                <div
+                  key={s.id}
+                  className={`absolute overflow-hidden rounded-2xl border border-champagne-300/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,.5)] ${TILE_LAYOUT[i]}`}
+                >
+                  <img
+                    src={s.img}
+                    alt=""
+                    draggable={false}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              );
+            })}
+          </m.div>
+        )}
+      </m.div>
 
       {/* ── Scroll cue ── */}
       <button

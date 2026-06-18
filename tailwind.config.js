@@ -44,6 +44,16 @@ export default {
           500: '#2b251c',
           400: '#3a3327',
         },
+        // Dark rose-gold ramp — premium plum-rose backdrop for the hero
+        // (replaces flat noir black with a warmer, jewellery-store mood)
+        rosegold: {
+          900: '#1c0f10',
+          800: '#2a1416',
+          700: '#3a1b1e',
+          600: '#4a2226',
+          500: '#5e2a2e',
+          400: '#7d3a3a',
+        },
         // Warm grey ramp (greys with a brown undertone, never cold)
         stone: {
           50:  '#f6f3ee',
@@ -98,6 +108,8 @@ export default {
         // Dark cinematic surfaces
         'noir-deep':  'radial-gradient(130% 100% at 75% 0%,#221d16 0%,#0b0a08 60%)',
         'noir-fade':  'linear-gradient(180deg,#13110d 0%,#0b0a08 100%)',
+        // Dark rose-gold cinematic surface — premium plum/rose mood for the hero
+        'rosegold-deep': 'radial-gradient(130% 100% at 75% 0%,#3a1b1e 0%,#1c0f10 60%)',
         // Text-legibility scrim for the dark hero — bottom-weighted so the
         // product photo stays bright and clearly visible through the middle,
         // while the headline (anchored low) and header (its own top veil)

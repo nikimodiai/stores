@@ -88,10 +88,22 @@ export default function Storefront() {
   const [aiLabel, setAiLabel] = useState(''); // the query that triggered it
   const catalogueRef = useRef(null);
   const latestRef = useRef(null);        // "Latest Arrivals" section (New Arrivals shortcut)
+  const reviewsRef = useRef(null);       // Trust/reviews section (header rating shortcut)
   const sentinelRef = useRef(null); // infinite-scroll trigger element
 
   const scrollToCatalogue = useCallback(() => {
     catalogueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // Reviews only render on the unfiltered home view — clear any active
+  // filter first so the section is guaranteed to be mounted to scroll to.
+  const scrollToReviews = useCallback(() => {
+    setActive(null);
+    setSubActive(null);
+    setSearch('');
+    setMetalFilter('');
+    setAiFilteredIds(null);
+    setTimeout(() => reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   }, []);
 
   // "New Arrivals" quick link → scroll to Latest Arrivals (or catalogue).
@@ -305,8 +317,10 @@ export default function Storefront() {
         resultCount={visible.length}
         onOpenOffers={() => setOffersOpen(true)}
         products={products}
+        reviews={reviews}
         overHero={isHome}
         onOpenProduct={setSelectedProduct}
+        onOpenReviews={scrollToReviews}
       />
 
       <OffersModal
@@ -386,7 +400,9 @@ export default function Storefront() {
 
       {/* ── Craftsmanship & reviews ── */}
       {isHome && (
-        <TrustSection store={store} storeName={storeName} reviews={reviews} />
+        <div ref={reviewsRef} className="scroll-mt-24">
+          <TrustSection store={store} storeName={storeName} reviews={reviews} />
+        </div>
       )}
 
       <main ref={catalogueRef} className="mx-auto max-w-[1280px] scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8">

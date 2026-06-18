@@ -16,7 +16,7 @@ const PILLARS = [
   { icon: MessageCircle,     title: 'Personal Concierge',     body: 'Questions? Chat with the store directly on WhatsApp for a tailored answer.' },
 ];
 
-const AUTO_MS = 5500;
+const AUTO_MS = 4000;
 
 // Auto-sliding review carousel — only mounted when real reviews exist.
 function ReviewSlider({ reviews }) {
@@ -43,80 +43,97 @@ function ReviewSlider({ reviews }) {
 
   return (
     <div
-      className="relative mt-16 overflow-hidden rounded-[28px] border border-noir-500/60 bg-noir-800 px-6 py-12 text-champagne-50 shadow-noir sm:px-12"
+      className="relative mt-10 overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-500/10 blur-[90px]" aria-hidden="true" />
-      <Quote size={40} className="mx-auto text-gold-400/70" />
-
-      <div className="relative mx-auto mt-6 min-h-[150px] max-w-2xl text-center">
-        <AnimatePresence mode="wait">
-          <m.figure
-            key={r.id}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.6, ease: EASE }}
-          >
-            {r.rating != null && (
-              <div className="mb-4 flex justify-center gap-1" aria-label={`${r.rating} out of 5`}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    size={16}
-                    className={i < Math.round(r.rating) ? 'fill-gold-300 text-gold-300' : 'text-champagne-100/25'}
-                  />
-                ))}
-              </div>
-            )}
-            <blockquote className="font-display text-[clamp(1.2rem,2.4vw,1.7rem)] italic leading-relaxed text-champagne-50">
-              “{r.body}”
-            </blockquote>
-            <figcaption className="mt-6 flex items-center justify-center gap-3">
-              {r.avatar_url ? (
-                <img src={r.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-1 ring-gold-300/40" draggable={false} />
-              ) : (
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-champ-sheen text-[13px] font-bold text-noir-800">
-                  {initials}
-                </span>
-              )}
-              <span className="text-sm font-semibold tracking-wide text-champagne-200">{r.customer_name || 'Verified buyer'}</span>
-            </figcaption>
-          </m.figure>
-        </AnimatePresence>
+      {/* Subtle ambient glow behind the card */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+        <div className="h-32 w-96 rounded-full bg-gold-300/10 blur-[60px]" />
       </div>
 
-      {reviews.length > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-4">
-          <button
-            onClick={() => go(-1)}
-            className="grid h-9 w-9 place-items-center rounded-full border border-champagne-300/25 text-champagne-200 transition hover:border-champagne-300/60 hover:text-champagne-50"
-            aria-label="Previous review"
-            data-magnetic
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <div className="flex items-center gap-1.5">
-            {reviews.map((rev, i) => (
-              <button
-                key={rev.id}
-                onClick={() => setIdx(i)}
-                className={`h-[3px] rounded-full transition-all duration-500 ${i === idx ? 'w-7 bg-gold-300' : 'w-3 bg-champagne-100/25'}`}
-                aria-label={`Review ${i + 1}`}
-              />
-            ))}
-          </div>
-          <button
-            onClick={() => go(1)}
-            className="grid h-9 w-9 place-items-center rounded-full border border-champagne-300/25 text-champagne-200 transition hover:border-champagne-300/60 hover:text-champagne-50"
-            aria-label="Next review"
-            data-magnetic
-          >
-            <ChevronRight size={16} />
-          </button>
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,248,235,0.85) 0%, rgba(255,255,255,0.75) 60%, rgba(253,244,215,0.8) 100%)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+        }}
+        className="relative mx-auto max-w-2xl rounded-2xl border border-gold-200/70 px-8 py-8 shadow-[0_4px_32px_rgba(179,142,56,0.10)]"
+      >
+        {/* Gold accent line at top */}
+        <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-gradient-to-r from-transparent via-gold-400 to-transparent" />
+
+        {/* Quote icon */}
+        <div className="mb-4 flex justify-center">
+          <Quote size={24} className="text-gold-400/60" />
         </div>
-      )}
+
+        <div className="relative min-h-[100px] text-center">
+          <AnimatePresence mode="wait">
+            <m.figure
+              key={r.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.45, ease: EASE }}
+            >
+              {r.rating != null && (
+                <div className="mb-3 flex justify-center gap-0.5" aria-label={`${r.rating} out of 5`}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      size={14}
+                      className={i < Math.round(r.rating) ? 'fill-gold-400 text-gold-400' : 'text-gold-200'}
+                    />
+                  ))}
+                </div>
+              )}
+              <blockquote className="font-display text-[clamp(0.95rem,1.8vw,1.15rem)] italic leading-relaxed text-ink">
+                "{r.body}"
+              </blockquote>
+              <figcaption className="mt-5 flex items-center justify-center gap-2.5">
+                {r.avatar_url ? (
+                  <img src={r.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover ring-1 ring-gold-300/60" draggable={false} />
+                ) : (
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-gold-100 text-[11px] font-bold text-gold-700">
+                    {initials}
+                  </span>
+                )}
+                <span className="text-xs font-semibold tracking-widest uppercase text-ink-mid">{r.customer_name || 'Verified buyer'}</span>
+              </figcaption>
+            </m.figure>
+          </AnimatePresence>
+        </div>
+
+        {reviews.length > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={() => go(-1)}
+              className="grid h-7 w-7 place-items-center rounded-full border border-gold-300/50 text-gold-600 transition hover:border-gold-500 hover:bg-gold-50"
+              aria-label="Previous review"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <div className="flex items-center gap-1">
+              {reviews.map((rev, i) => (
+                <button
+                  key={rev.id}
+                  onClick={() => setIdx(i)}
+                  className={`rounded-full transition-all duration-500 ${i === idx ? 'h-1.5 w-6 bg-gold-500' : 'h-1.5 w-1.5 bg-gold-300/40 hover:bg-gold-300/70'}`}
+                  aria-label={`Review ${i + 1}`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => go(1)}
+              className="grid h-7 w-7 place-items-center rounded-full border border-gold-300/50 text-gold-600 transition hover:border-gold-500 hover:bg-gold-50"
+              aria-label="Next review"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
