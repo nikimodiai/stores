@@ -138,12 +138,28 @@ export default function StoreHeader({
             aria-label={`${storeName} — home`}
             data-magnetic
           >
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-gold-sheen text-white shadow-gold">
-              <Gem size={18} strokeWidth={1.75} />
-            </span>
-            <span className={`text-lg leading-none tracking-tight sm:text-xl lg:text-[22px] font-serif font-bold transition-colors duration-500 ${solid ? 'text-ink' : 'text-champagne-50'}`}>
-              {storeName}
-            </span>
+            {store?.logo_url ? (
+              <img
+                src={store.logo_url}
+                alt={`${storeName} logo`}
+                className="h-9 w-9 rounded-full object-cover"
+              />
+            ) : (
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-gold-sheen text-white shadow-gold">
+                <Gem size={18} strokeWidth={1.75} />
+              </span>
+            )}
+            {store?.name_style_url ? (
+              <img
+                src={store.name_style_url}
+                alt={storeName}
+                className="h-7 sm:h-8 lg:h-9 w-auto object-contain"
+              />
+            ) : (
+              <span className={`text-lg leading-none tracking-tight sm:text-xl lg:text-[22px] font-serif font-bold transition-colors duration-500 ${solid ? 'text-ink' : 'text-champagne-50'}`}>
+                {storeName}
+              </span>
+            )}
           </button>
           {avgRating !== null && reviewCount > 0 && (
             <button

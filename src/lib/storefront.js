@@ -20,7 +20,7 @@ import { db, CATEGORIES } from './config';
 // even though the anon RLS policy on the base table technically allows them.
 const STORE_VIEW = 'public_stores';
 const STORE_PUBLIC_COLS =
-  'id, owner_id, store_name, slug, address, phone, whatsapp_phone, status, selfie_tryon_tier';
+  'id, owner_id, store_name, slug, address, phone, whatsapp_phone, status, selfie_tryon_tier, logo_url, name_style_url';
 
 // Columns from `products` the storefront actually renders.
 const PRODUCT_PUBLIC_COLS = [
