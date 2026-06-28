@@ -532,9 +532,19 @@ export async function checkTryOnAccess(ownerId, whatsappNumber, tier) {
  * @param {object} args.product   the product being tried on
  * @param {File}   args.selfieFile
  * @param {string} [args.occasion]      '', 'wedding', 'party', 'casual', 'festive'
+ * @param {object} [args.style]         extra styling controls (see below). The
+ *                                      customer's own face is always preserved;
+ *                                      these only restyle around it.
+ * @param {string} [args.style.makeup]        '', 'natural', 'soft_glam', 'bridal_glam'
+ * @param {string} [args.style.bindi]         '', 'small_red', 'maroon', 'decorative'
+ * @param {string} [args.style.background]    '', 'studio_white', 'beige', 'gradient', 'mandap', 'palace', 'outdoor'
+ * @param {string} [args.style.attire]        '', 'saree', 'lehenga', 'bridal', 'indo_western', 'gown', 'plain'
+ * @param {string} [args.style.attire_color]  '', 'neutral', 'red', 'pastel', 'jewel', 'black'
+ * @param {string} [args.style.aspect]        '', '1:1', '4:5', '9:16', '16:9'  ('' = auto from selfie)
+ * @param {string} [args.style.lighting]      '', 'clean', 'soft', 'editorial', 'golden', 'moody'
  * @param {string} [args.customerName]
  */
-export async function runTryOn({ ownerId, product, selfieFile, occasion = '', customerName = 'Website Visitor' }) {
+export async function runTryOn({ ownerId, product, selfieFile, occasion = '', style = {}, customerName = 'Website Visitor' }) {
   if (!ownerId) return { success: false, reason: 'missing_owner', message: 'Store not identified.' };
   if (!product) return { success: false, reason: 'missing_product', message: 'No product selected.' };
   if (!selfieFile) return { success: false, reason: 'missing_selfie', message: 'Please choose a selfie first.' };
@@ -557,6 +567,14 @@ export async function runTryOn({ ownerId, product, selfieFile, occasion = '', cu
     item_image_url: itemImageUrl,
     jewellery_type: jewelleryTypeFor(product),
     occasion: occasion || '',
+    // Extra styling controls — all optional, blank means "leave as-is".
+    makeup: style.makeup || '',
+    bindi: style.bindi || '',
+    background: style.background || '',
+    attire: style.attire || '',
+    attire_color: style.attire_color || '',
+    aspect_ratio: style.aspect || '',
+    lighting: style.lighting || '',
     customer_name: customerName || 'Website Visitor',
   };
 

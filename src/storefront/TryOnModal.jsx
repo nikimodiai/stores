@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Camera, Sparkles, RefreshCw, Download, Share2, MessageCircle, Mail, Copy, Check, Phone, Lock, ChevronDown } from 'lucide-react';
 import { runTryOn, checkTryOnAccess } from '../lib/storefront';
 
-// Occasion options — mirror the outfit map in the n8n "Build Prompt" node.
+// ── Styling options ──────────────────────────────────────────────────
+// All of these only restyle AROUND the customer's own face — the selfie's
+// identity (face, features, expression) is always preserved by the n8n
+// "Build Prompt" node. Each list's '' value means "leave as-is / let AI decide".
+
+// Occasion — a quick preset. Mirrors the outfit map in "Build Prompt".
+// Attire & Background can still be set independently below for finer control.
 const OCCASIONS = [
   { value: '', label: 'Just the jewellery' },
   { value: 'wedding', label: 'Wedding' },
@@ -10,6 +16,77 @@ const OCCASIONS = [
   { value: 'festive', label: 'Festive' },
   { value: 'casual', label: 'Casual' },
 ];
+
+const MAKEUP = [
+  { value: '', label: 'As is' },
+  { value: 'natural', label: 'Natural' },
+  { value: 'soft_glam', label: 'Soft glam' },
+  { value: 'bridal_glam', label: 'Bridal glam' },
+];
+
+const BINDI = [
+  { value: '', label: 'None' },
+  { value: 'small_red', label: 'Small red', dot: '#b4232a' },
+  { value: 'maroon', label: 'Maroon', dot: '#7a1f2b' },
+  { value: 'decorative', label: 'Decorative' },
+];
+
+const BACKGROUND = [
+  { value: '', label: 'Keep mine' },
+  { value: 'studio_white', label: 'Studio white' },
+  { value: 'beige', label: 'Beige' },
+  { value: 'gradient', label: 'Soft gradient' },
+  { value: 'mandap', label: 'Wedding mandap' },
+  { value: 'palace', label: 'Palace' },
+  { value: 'outdoor', label: 'Outdoor bokeh' },
+];
+
+const ATTIRE = [
+  { value: '', label: 'As is' },
+  { value: 'saree', label: 'Saree' },
+  { value: 'lehenga', label: 'Lehenga' },
+  { value: 'bridal', label: 'Bridal' },
+  { value: 'indo_western', label: 'Indo-western' },
+  { value: 'gown', label: 'Gown' },
+  { value: 'plain', label: 'Plain neutral' },
+];
+
+const ATTIRE_COLOR = [
+  { value: '', label: 'Auto' },
+  { value: 'neutral', label: 'Neutral', dot: '#cfcfcf' },
+  { value: 'red', label: 'Red', dot: '#b4232a' },
+  { value: 'pastel', label: 'Pastel', dot: '#f2c9d4' },
+  { value: 'jewel', label: 'Jewel-tone', dot: '#1f5c4d' },
+  { value: 'black', label: 'Black', dot: '#111111' },
+];
+
+const ASPECT = [
+  { value: '', label: 'Auto' },
+  { value: '1:1', label: 'Square' },
+  { value: '4:5', label: 'Portrait' },
+  { value: '9:16', label: 'Story' },
+  { value: '16:9', label: 'Landscape' },
+];
+
+const LIGHTING = [
+  { value: '', label: 'As is' },
+  { value: 'clean', label: 'Clean' },
+  { value: 'soft', label: 'Soft studio' },
+  { value: 'editorial', label: 'Editorial' },
+  { value: 'golden', label: 'Golden hour' },
+  { value: 'moody', label: 'Moody' },
+];
+
+// Initial styling selection — everything "leave as-is" except occasion.
+const DEFAULT_STYLE = {
+  makeup: '',
+  bindi: '',
+  background: '',
+  attire: '',
+  attire_color: '',
+  aspect: '',
+  lighting: '',
+};
 
 // Common country codes — India first, then alphabetical by name.
 const COUNTRY_CODES = [
@@ -207,6 +284,8 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
   const [selfieFile, setSelfieFile] = useState(null);
   const [selfiePreview, setSelfiePreview] = useState(null);
   const [occasion, setOccasion] = useState('');
+  const [style, setStyle] = useState(DEFAULT_STYLE);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Result state
   const [result, setResult] = useState(null);
@@ -231,6 +310,8 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
       setSelfieFile(null);
       setSelfiePreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
       setOccasion('');
+      setStyle(DEFAULT_STYLE);
+      setShowAdvanced(false);
       setResult(null);
       setErrorMsg('');
       setShareFallback(false);
@@ -324,7 +405,7 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
     if (!selfieFile) return;
     setPhase('loading');
     setErrorMsg('');
-    const res = await runTryOn({ ownerId, product, selfieFile, occasion, customerName });
+    const res = await runTryOn({ ownerId, product, selfieFile, occasion, style, customerName });
     if (res.success && res.imageUrl) {
       setResult({ imageUrl: res.imageUrl, caption: res.caption });
       setPhase('result');
@@ -339,6 +420,8 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
     setSelfieFile(null);
     setSelfiePreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
     setOccasion('');
+    setStyle(DEFAULT_STYLE);
+    setShowAdvanced(false);
     setResult(null);
     setErrorMsg('');
     setShareFallback(false);
@@ -385,6 +468,37 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
   const waShareUrl = result ? `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${result.imageUrl}`)}` : '#';
   const mailShareUrl = result ? `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(`${shareText}\n\n${result.imageUrl}`)}` : '#';
   const productImg = product?.primary_image_url || (Array.isArray(product?.images) && product.images[0]) || '';
+
+  // ── Reusable single-select chip group ────────────────────────────────
+  const setStyleKey = (key) => (v) => setStyle(s => ({ ...s, [key]: v }));
+
+  const ChipRow = ({ label, options, selected, onSelect }) => (
+    <div className="mt-4">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-luxe text-ink-mid">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map(o => (
+          <button
+            key={o.value || 'none'}
+            type="button"
+            className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] transition ${
+              selected === o.value
+                ? 'border-gold-700 bg-gold-700 font-semibold text-white'
+                : 'border-line bg-white text-ink-mid hover:border-gold-500 hover:text-ink'
+            }`}
+            onClick={() => onSelect(o.value)}
+          >
+            {o.dot && (
+              <span
+                className="h-2.5 w-2.5 rounded-full ring-1 ring-black/10"
+                style={{ background: o.dot }}
+              />
+            )}
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -592,30 +706,37 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
                 </button>
               )}
 
-              <div className="mt-5">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-luxe text-ink-mid">Styling for</p>
-                <div className="flex flex-wrap gap-2">
-                  {OCCASIONS.map(o => (
-                    <button
-                      key={o.value || 'none'}
-                      className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition ${
-                        occasion === o.value
-                          ? 'border-gold-700 bg-gold-700 font-semibold text-white'
-                          : 'border-line bg-white text-ink-mid hover:border-gold-500 hover:text-ink'
-                      }`}
-                      onClick={() => setOccasion(o.value)}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
+              {/* Your face always stays yours — these only restyle around it. */}
+              <ChipRow label="Styling for" options={OCCASIONS} selected={occasion} onSelect={setOccasion} />
+              <ChipRow label="Makeup" options={MAKEUP} selected={style.makeup} onSelect={setStyleKey('makeup')} />
+              <ChipRow label="Bindi" options={BINDI} selected={style.bindi} onSelect={setStyleKey('bindi')} />
+              <ChipRow label="Background" options={BACKGROUND} selected={style.background} onSelect={setStyleKey('background')} />
+              <ChipRow label="Outfit" options={ATTIRE} selected={style.attire} onSelect={setStyleKey('attire')} />
+              {style.attire && (
+                <ChipRow label="Outfit colour" options={ATTIRE_COLOR} selected={style.attire_color} onSelect={setStyleKey('attire_color')} />
+              )}
+
+              {/* Advanced — aspect ratio & lighting */}
+              <button
+                type="button"
+                className="mt-5 flex items-center gap-1 text-[13px] font-semibold text-gold-700 transition hover:text-gold-800"
+                onClick={() => setShowAdvanced(v => !v)}
+              >
+                <ChevronDown size={15} className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                Advanced options
+              </button>
+              {showAdvanced && (
+                <div className="animate-scaleIn">
+                  <ChipRow label="Photo shape" options={ASPECT} selected={style.aspect} onSelect={setStyleKey('aspect')} />
+                  <ChipRow label="Lighting / look" options={LIGHTING} selected={style.lighting} onSelect={setStyleKey('lighting')} />
                 </div>
-              </div>
+              )}
 
               <button className="btn-gold mt-6 w-full" onClick={generate} disabled={!selfieFile}>
                 <Sparkles size={16} /> Create my look
               </button>
               <p className="mt-2.5 text-center text-xs text-ink-soft">
-                Your selfie is used only to generate this try-on.
+                Your selfie is used only to generate this try-on — your face stays exactly as it is.
               </p>
             </>
           )}
