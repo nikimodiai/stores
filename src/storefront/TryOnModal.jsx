@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Camera, Sparkles, RefreshCw, Download, Share2, MessageCircle, Mail, Copy, Check, Phone, Lock, ChevronDown } from 'lucide-react';
+import { X, Camera, Upload, Sparkles, RefreshCw, Download, Share2, MessageCircle, Mail, Copy, Check, Phone, Lock, ChevronDown } from 'lucide-react';
 import { runTryOn, checkTryOnAccess } from '../lib/storefront';
 
 // ── Styling options ──────────────────────────────────────────────────
@@ -294,6 +294,7 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
   const [copied, setCopied] = useState(false);
 
   const fileRef = useRef(null);
+  const camRef = useRef(null);
   const phoneRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -682,28 +683,54 @@ export default function TryOnModal({ open, ownerId, product, store, customerName
           {/* ── Selfie input ── */}
           {phase === 'input' && (
             <>
-              <input ref={fileRef} type="file" accept="image/*" capture="user" className="hidden" onChange={pickSelfie} />
-              <button
-                type="button"
-                className="grid w-full place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-gold-200 bg-ivory/70 transition hover:border-gold-400 hover:bg-ivory"
-                onClick={() => fileRef.current?.click()}
-              >
-                {selfiePreview ? (
+              {/* Camera capture (mobile opens the camera directly) */}
+              <input ref={camRef} type="file" accept="image/*" capture="user" className="hidden" onChange={pickSelfie} />
+              {/* Plain file picker (mobile shows gallery/files, desktop shows file browser) */}
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickSelfie} />
+
+              {selfiePreview ? (
+                <button
+                  type="button"
+                  className="grid w-full place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-gold-200 bg-ivory/70 transition hover:border-gold-400 hover:bg-ivory"
+                  onClick={() => fileRef.current?.click()}
+                >
                   <img src={selfiePreview} alt="Your selfie" className="max-h-64 w-full object-contain" />
-                ) : (
-                  <span className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-gold-200 bg-ivory/70 px-4 py-8 text-center transition hover:border-gold-400 hover:bg-ivory"
+                    onClick={() => camRef.current?.click()}
+                  >
                     <span className="grid h-14 w-14 place-items-center rounded-full bg-gold-100 text-gold-700">
                       <Camera size={26} />
                     </span>
-                    <span className="text-sm font-semibold text-ink">Take or upload a selfie</span>
-                    <span className="text-xs text-ink-mid">A clear, front-facing photo works best</span>
-                  </span>
-                )}
-              </button>
+                    <span className="text-sm font-semibold text-ink">Take a selfie</span>
+                    <span className="text-xs text-ink-mid">Use your camera</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-gold-200 bg-ivory/70 px-4 py-8 text-center transition hover:border-gold-400 hover:bg-ivory"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <span className="grid h-14 w-14 place-items-center rounded-full bg-gold-100 text-gold-700">
+                      <Upload size={26} />
+                    </span>
+                    <span className="text-sm font-semibold text-ink">Upload a photo</span>
+                    <span className="text-xs text-ink-mid">From your gallery or files</span>
+                  </button>
+                </div>
+              )}
               {selfiePreview && (
-                <button className="mt-2 w-full text-center text-[13px] font-medium text-gold-700 transition hover:text-gold-800" onClick={() => fileRef.current?.click()}>
-                  Choose a different photo
-                </button>
+                <div className="mt-2 flex justify-center gap-4">
+                  <button className="text-center text-[13px] font-medium text-gold-700 transition hover:text-gold-800" onClick={() => camRef.current?.click()}>
+                    Retake selfie
+                  </button>
+                  <button className="text-center text-[13px] font-medium text-gold-700 transition hover:text-gold-800" onClick={() => fileRef.current?.click()}>
+                    Upload a different photo
+                  </button>
+                </div>
               )}
 
               {/* Your face always stays yours — these only restyle around it. */}
